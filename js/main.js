@@ -55,11 +55,13 @@ function displayFishInfo(fish){
     .attr("id", "fishName")
     .text(fish.Name);
 
-    // Add Image
-    leftSection.append("div")
-    .attr("id", "fishImage")
-    .append("img")
-    .attr("src", `data/images/fish/${fish.Name.replace(/ /g, "_")}.png`);
+    // Add Image and motif
+    const imageContainer = leftSection.append("div").attr("id", "fishImageContainer");
+    imageContainer.append("img")
+        .attr("src", `data/images/fish/${fish.Name.replace(/ /g, "_")}.png`);
+    imageContainer.append("div")
+        .attr("id", "fishMotif")
+
 
     // Set fish description
     leftSection.append("div")
@@ -68,19 +70,35 @@ function displayFishInfo(fish){
 
     // Right section
     const rightSection = contentContainer.append("div").attr("class", "page-right");
+    
+    // Create table for fish info
+    const table = rightSection.append("table")
+        .attr("id", "fishInfoTable");
+    const tbody = table.append("tbody");
 
-    // Sets Fish info
-    rightSection.append("p").text(`Location: ${fish.Location}`);
-    rightSection.append("p").text(`Time: ${fish.Time}`);
-    rightSection.append("p").text(`Season: ${fish.Season}`);
-    rightSection.append("p").text(`Weather: ${fish.Weather}`);
-    rightSection.append("p").text(`Size: ${fish.Size}`);
-    rightSection.append("p").text(`Difficulty & Behavior: ${fish.Difficulty}`);
-    rightSection.append("p").text(`Base XP: ${fish.BaseXP}`);
+    const info = [
+        { label: "Location", value: fish.Location },
+        { label: "Time", value: fish.Time },
+        { label: "Season", value: fish.Season },
+        { label: "Weather", value: fish.Weather },
+        { label: "Base XP", value: fish.BaseXP }
+    ]
+
+    console.log(info);
+
+    info.forEach(i => {
+        const row = tbody.append("tr");
+        row.append("th").text(i.label);
+        row.append("td").text(i.value);
+    });
 
     // Add price breakdown in grouped bar chart, price depending on quality. different bars represent profession
-    const priceBreakdown = d3.select("#fishInfoContent").append("div").attr("id", "priceBreakdown");
+    const priceBreakdown = rightSection.append("div")
+        .attr("id", "priceBreakdown");
+    priceBarChart("#priceBreakdown", fish.Name);
 }
+
+
 
 
 function myFilter() {
@@ -102,9 +120,10 @@ function myFilter() {
 
 
 function priceBarChart(selector, fishName){
-    var margin = {top: 10, right: 30, bottom: 20, left: 50},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
+    let margin = {top: 10, right: 30, bottom: 20, left: 50},
+        width = 460 - margin.left - margin.right,
+        height = 200 - margin.top - margin.bottom;
+
     // append the svg object to the body of the page
     let svg = d3.select(selector)
     .append("svg")
@@ -129,29 +148,28 @@ function priceBarChart(selector, fishName){
             "AP": parseInt(anglerRow[fishName])
         });
     });
-    console.log(data);
 
-    // fx encodes the fish quality
-    const fx = d3.scaleBand()
+    // fy encodes the fish quality
+    const fy = d3.scaleBand()
     .domain(subgroups)
-    .range([0, width])
-    .padding(0.2);
+    .range([0, height])
+    .padding(0.4);
     
 
-    // Add x encodes the profession
-    const x = d3.scaleBand()
+    // y encodes the profession
+    const y = d3.scaleBand()
     .domain(groups)
-    .range([0, fx.bandwidth()])
-    .padding(0.05);
+    .range([0, fy.bandwidth()])
+    .padding(0.2);
 
     const color = d3.scaleOrdinal()
     .domain(groups)
     .range(d3.schemeSpectral[groups.length]);
 
-    // y encodes the price (height of the bars)
-    let y = d3.scaleLinear()
-    .domain([0, d3.max(data, d => Math.max(d["BP"], d["FP"], d["AP"]))]).nice()
-    .range([height, 0]);
+    // x encodes the price (width of the bars)
+    let x = d3.scaleLinear()
+        .domain([0, d3.max(data, d => Math.max(d["BP"], d["FP"], d["AP"]))]).nice()
+        .range([0, width]);
 
     // Show the bars
     svg.append("g")
@@ -159,31 +177,31 @@ function priceBarChart(selector, fishName){
         .data(data)
         .enter()
         .append("g")
-            .attr("transform", d => "translate(" + fx(d.quality) + ",0)")
+            .attr("transform", d => "translate(0," + fy(d.quality) + ")")
         .selectAll("rect")
         .data(d => groups.map(key => ({key: key, value: d[key]})))
         .enter()
         .append("rect")
-            .attr("x", d => x(d.key))
-            .attr("y", d => y(d.value))
-            .attr("width", x.bandwidth())
-            .attr("height", d => height - y(d.value))
+            .attr("y", d => y(d.key))
+            .attr("x", 0)
+            .attr("height", y.bandwidth())
+            .attr("width", d => x(d.value))
             .style("fill", d => color(d.key))
             .append("title")
                 .text(d => `${d.value}g`);
     
     // Add y axis
     svg.append("g")
-        .call(d3.axisLeft(y));
+        .call(d3.axisLeft(fy));
     
     // Add x axis
     svg.append("g")
         .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(fx).tickSize(0));
+        .call(d3.axisBottom(x).tickSize(0));
 
     // Add legend
     const legend = svg.append("g")
-        .attr("transform", `translate(10, 0)`);
+        .attr("transform", `translate(${width * 0.7}, 0)`);
 
     const professions = ["Base Profession", "Fisher Profession", "Angler Profession"];
     professions.forEach((profession, i) => {

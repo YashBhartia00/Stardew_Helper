@@ -49,7 +49,7 @@ background-image: url('../data/images/search.png'); /* Add a search icon to inpu
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    width: 50%;
+    width: 100%;
     /* background-color: aqua; */
     position: relative;
 }
@@ -58,6 +58,8 @@ background-image: url('../data/images/search.png'); /* Add a search icon to inpu
     display: flex;
     justify-content: space-between;
     width: 100%;
+    background-color: blue;
+    z-index: 1;
 }
 
 .page-left, .page-right {
@@ -71,11 +73,20 @@ background-image: url('../data/images/search.png'); /* Add a search icon to inpu
 }
 
 #fishImage img{
-    padding: 20px;
     width: 60%;
+    margin-bottom: 10px;
 }
 
 #fishName {
     font-size: 5vw;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+#fishImageContainer {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-bottom: 20px;
 }
 
