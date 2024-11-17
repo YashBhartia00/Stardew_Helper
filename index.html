@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="text/javascript" src="js/d3.v7.min.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body onload ="createViz()">
+    <div id="mapContainer">
+    </div>
+    
+    <div id="fishInfo">
+    </div>
+
+    <div class="searchContainer">
+        <div class="searchbox">
+            <input type="search" id="fishSearch" placeholder="search by name" onkeyup="myFilter()">
+        </div>
+        <ul id="fishList"></ul>
+    </div>
+
+    
+</body>
+</html>
