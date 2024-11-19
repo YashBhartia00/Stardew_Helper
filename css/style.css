@@ -1,3 +1,15 @@
+@font-face {
+    font-family: 'Stardew';
+    src: url(../data/font/Stardew_Valley.ttf) format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    font-family: 'Stardew';
+}
+
+
 /* Style search/filter container*/
 .searchContainer{
     position: absolute;
@@ -45,41 +57,80 @@ background-image: url('../data/images/search.png'); /* Add a search icon to inpu
 
 
 /* Style fish subpage */
-#fishInfo{
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
+#fishInfoOverlay {
+    position: fixed;
+    top:0;
+    left: 0;
     width: 100%;
-    /* background-color: aqua; */
+    height: 100%;
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+
+#fishInfo{
+    background-color: white;
+    padding: 20px;
+    width: 60%;
+    max-width: 1200px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
     position: relative;
+    border-radius: 25px;
 }
 
 #fishInfoContent {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    background-color: blue;
-    z-index: 1;
+    align-items: flex-start;
 }
 
 .page-left, .page-right {
     width: 45%;
+    display: flex;
+    flex-direction: column;
 }
 
 #close {
+    position: absolute;
     top: 10px;
-    right: 10px;
+    right: 15px;
     cursor: pointer;
+    font-size: 1em;
+    background: none;
+    border: none;
+    color: black;
 }
 
-#fishImage img{
-    width: 60%;
-    margin-bottom: 10px;
+#fishImageContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+    gap: 20px;
+    width: 100%;
+}
+
+#fishImageContainer img{
+    width: 128px; 
+    object-fit: contain;
+}
+
+#fishMinigame {
+    width: 5%;
+    height: 128px;
+    background-color: lightcoral;
 }
 
 #fishName {
-    font-size: 5vw;
+    font-size: 5em;
     font-weight: bold;
+    margin-bottom: 20px;
+    width: 100%;
     margin-bottom: 20px;
 }
 
@@ -88,5 +139,16 @@ background-image: url('../data/images/search.png'); /* Add a search icon to inpu
     align-items: center;
     flex-direction: column;
     margin-bottom: 20px;
+}
+
+#fishInfoTable td {
+    border-left: 1px solid #ddd;
+    padding-left: 10px;
+}
+
+#fishInfoTable {
+    border-collapse: collapse;
+    width: 100%;
+    text-align: left;
 }
 

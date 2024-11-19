@@ -35,32 +35,36 @@ function addFishToList(fish){
 }
 
 function displayFishInfo(fish){
-    const container = d3.select("#fishInfo").html("");
+    const overlay = d3.select("body").append("div").attr("id", "fishInfoOverlay");
+    const container = overlay.append("div").attr("id", "fishInfo");
 
     // Close Icon
     container.append("div")
     .attr("id", "close")
     .text("X")
     .on("click", function() {
-        container.html(""); // Close the container on close
+        overlay.remove(); // Close the container on close
     });
 
+
+    // Add fish name
+    container.append("div")
+    .attr("id", "fishName")
+    .text(fish.Name);
+
     const contentContainer = container.append("div").attr("id", "fishInfoContent");
+
 
     // Left section with fish name and image
     const leftSection = contentContainer.append("div").attr("class", "page-left")
 
-    // Add fish name
-    leftSection.append("div")
-    .attr("id", "fishName")
-    .text(fish.Name);
 
     // Add Image and motif
     const imageContainer = leftSection.append("div").attr("id", "fishImageContainer");
     imageContainer.append("img")
         .attr("src", `data/images/fish/${fish.Name.replace(/ /g, "_")}.png`);
     imageContainer.append("div")
-        .attr("id", "fishMotif")
+        .attr("id", "fishMinigame");
 
 
     // Set fish description
@@ -83,8 +87,6 @@ function displayFishInfo(fish){
         { label: "Weather", value: fish.Weather },
         { label: "Base XP", value: fish.BaseXP }
     ]
-
-    console.log(info);
 
     info.forEach(i => {
         const row = tbody.append("tr");
