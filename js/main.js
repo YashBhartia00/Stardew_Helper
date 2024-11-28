@@ -1,13 +1,227 @@
 const ctx = {
-    MAP_W: 800,
-    MAP_H: 600,
+}
+
+let map, imageOverlay
+const polygons = {}
+
+function convertRelativeToAbsolute(relativeCoords){
+    console.log(ctx.MAP_W);
+    console.log(ctx.MAP_H); 
+    return relativeCoords.map(coords => [
+        coords[0] * ctx.MAP_H,
+        coords[1] * ctx.MAP_W
+    ]);
+}
+
+
+
+function computeMapDimensions(){
+    const screenWidth = window.innerWidth * 0.6;
+    const aspectRatio = 919/560;
+
+    ctx.MAP_H = screenWidth / aspectRatio;
+    ctx.MAP_W = screenWidth;   
+}
+
+function setPolygons(){
+    const areaSeaRelative = [
+        [0.17, 0.6], 
+        [0.015, 0.6],
+        [0.015, 0.87],
+        [0.3, 0.87],
+        [0.3, 0.87],
+        [0.27, 0.82],
+        [0.25, 0.8],
+        [0.18, 0.8],
+        [0.17, 0.79],
+        [0.18, 0.66],
+        [0.23, 0.63],
+        [0.22, 0.61]
+    ]
+
+    const areaLakeRelative = [
+        [0.835, 0.71],
+        [0.79, 0.71],
+        [0.75, 0.698],
+        [0.748, 0.694],
+        [0.726, 0.694],
+        [0.71, 0.705],
+        [0.69, 0.705],
+        [0.69, 0.7],
+        [0.68, 0.692],
+        [0.655, 0.692],
+        [0.6, 0.7],
+        [0.58, 0.696],
+        [0.555, 0.682],
+        [0.555, 0.696],
+        [0.59, 0.71],
+        [0.665, 0.71],
+        [0.68, 0.745],
+        [0.716, 0.75],
+        [0.748, 0.74],
+        [0.76, 0.745],
+        [0.767, 0.745],
+        [0.777, 0.723],
+        [0.777, 0.72]
+
+    ]
+
+    const areaTownRiverRelative = [
+        [0.54, 0.69],
+        [0.54, 0.675],
+        [0.525, 0.675],
+        [0.51, 0.683],
+        [0.435, 0.683],
+        [0.405, 0.673],
+        [0.398, 0.673],
+        [0.38, 0.685],
+        [0.35, 0.685],
+        [0.32, 0.65],
+        [0.32, 0.6],
+        [0.35, 0.56],
+        [0.355, 0.56],
+        [0.355, 0.525],
+        [0.348, 0.51],
+        [0.348, 0.47],
+        [0.35, 0.47],
+        [0.35, 0.42],
+        [0.32, 0.42],
+        [0.29, 0.44],
+        [0.29, 0.49],
+        [0.3, 0.52],
+        [0.3, 0.6],
+        [0.31, 0.61],
+        [0.31, 0.68],
+        [0.27, 0.702],
+        [0.27, 0.712],
+        [0.29, 0.708],
+        [0.295, 0.708],
+        [0.31, 0.7],
+        [0.32, 0.685],
+        [0.335, 0.685],
+        [0.35, 0.692],
+        [0.38, 0.692],
+        [0.4, 0.683],
+        [0.41, 0.683],
+        [0.44, 0.69],
+        [0.47, 0.695],
+        [0.51, 0.695]
+
+    ]
+    const areaForestRiverRelative = [
+        
+    ]
+
+    const areaSewersRelative = []  
+    const areaPondRelative = [
+        [0.41, 0.233],
+        [0.387, 0.233],
+        [0.365, 0.245],
+        [0.36, 0.255],
+        [0.36, 0.275],
+        [0.365, 0.285],
+        [0.375, 0.29],
+        [0.4, 0.29],
+        [0.42, 0.27],
+        [0.427, 0.25],
+        
+        
+    ]
+
+    const areas = {
+        areaSea: areaSeaRelative,
+        areaLake: areaLakeRelative,
+        areaTownRiver: areaTownRiverRelative,
+        areaForestRiver: areaForestRiverRelative,
+        areaSewers: areaSewersRelative,
+        areaPond: areaPondRelative
+    };
+
+    // Remove existing polygons if they exist
+    Object.keys(polygons).forEach(key => {
+        if(polygons[key]){
+            map.removeLayer(polygons[key]);
+        }
+    });
+
+    // Add new polygons
+    Object.keys(areas).forEach(key => {
+        const absoluteCoords = convertRelativeToAbsolute(areas[key]);
+        polygons[key] = L.polygon(absoluteCoords, {
+            color: 'red',
+            fillColor: 'red',
+            weight: 2,
+        });
+
+        polygons[key].on('mouseover', function(e){
+            this.setStyle({
+                fillOpacity: 0.7
+            })
+        });
+
+        polygons[key].on('mouseout', function(e){
+            this.setStyle({
+                fillOpacity: 0.2
+            })
+        });
+
+        polygons[key].addTo(map);
+    });
+
+}
+
+function mapInit(){
+    // Compute map dimensions 
+    computeMapDimensions();
+    const mapContainer = document.getElementById('map');
+    mapContainer.style.width = `${ctx.MAP_W}px`;
+    mapContainer.style.height = `${ctx.MAP_H}px`;
+
+    // Init map
+    map = L.map('map', {
+        crs: L.CRS.Simple,
+        minZoom: 0,
+        maxZoom:2,
+        maxBounds: [[0,0], [ctx.MAP_H, ctx.MAP_W]],
+        maxBoundsViscosity: 1.0,
+    });
+
+    // Load game map
+    const bounds = [[0, 0], [ctx.MAP_H,ctx.MAP_W]];
+    imageOverlay = L.imageOverlay('../data/images/map/main.jpg', bounds).addTo(map);
+    map.fitBounds(bounds);
+
+    setPolygons();
+
+    window.addEventListener('resize', function(){
+        computeMapDimensions();
+        const mapContainer = document.getElementById('map');
+        mapContainer.style.width = `${ctx.MAP_W}px`;
+        mapContainer.style.height = `${ctx.MAP_H}px`;
+
+        map.invalidateSize();
+        map.setMaxBounds([[0,0], [ctx.MAP_H, ctx.MAP_W]]);
+        map.fitBounds([[0,0], [ctx.MAP_H, ctx.MAP_W]]);
+
+        if(imageOverlay){
+            map.removeLayer(imageOverlay);
+        }
+        const newBounds = [[0, 0], [ctx.MAP_H,ctx.MAP_W]];
+        imageOverlay = L.imageOverlay('../data/images/map/main.jpg', newBounds).addTo(map);
+
+        // Update areas
+        setPolygons();
+    });
 }
 
 function createViz(){
     d3.select("mapContainer").append("svg")
                             .attr("width", ctx.MAP_W)
                             .attr("height", ctx.MAP_H)
+    
+    mapInit();
     loadData();
+
 }
 
 function loadData(){
@@ -122,7 +336,7 @@ function myFilter() {
 
 
 function priceBarChart(selector, fishName){
-    let margin = {top: 10, right: 30, bottom: 20, left: 50},
+    let margin = {top: 10, right: 30, bottom: 20, left: 40},
         width = 460 - margin.left - margin.right,
         height = 200 - margin.top - margin.bottom;
 
@@ -222,3 +436,8 @@ function priceBarChart(selector, fishName){
             .text(profession);
     });
 }
+
+
+// Add map to container
+
+
