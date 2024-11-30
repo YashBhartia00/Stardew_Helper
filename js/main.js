@@ -236,9 +236,12 @@ function createViz(){
                             .attr("width", ctx.MAP_W)
                             .attr("height", ctx.MAP_H)
     
+    ctx.SELECTED_TIME = new Array(21).fill(false);
+    ctx.SELECTED_SEASON = new Array(4).fill(false);
     mapInit();
     loadData();
-    seasonWheel();
+    // seasonWheel();
+    timeWheel();
 
 }
 
@@ -512,9 +515,127 @@ function seasonWheel(){
                     .attr("startOffset", "25%")
                     .style("text-anchor", "middle")
                     .text(d => d.data.key);
-
-    
-  
 }
 
 
+function timeWheel(){
+    const seasons = ["Spring", "Summer", "Fall", "Winter"];
+    const times = d3.range(6, 27).map(hour => `${hour % 24}:00`);
+
+    const size = 350;
+    const radius = size / 2;
+
+    const wheel = d3.select("#seasonWheel")
+        .append("svg")
+            .attr("width", size)
+            .attr("height", size)
+        .append("g")
+            .attr("transform", `translate(${radius}, ${radius})`);
+
+    const colorSeason = d3.scaleOrdinal()
+        .domain(seasons)
+        .range(["#00FF00", "#FFD700", "#FF8C00", "#1E90FF"]);
+
+    const pie = d3.pie()
+        .value(1);
+
+    const seasonData = pie(seasons.map(season => ({key: season, value: 1})));
+    const timeData = pie(times.map(time => ({key: time, value: 1})));
+
+    const arc = d3.arc()
+        .innerRadius(0)
+        .outerRadius(radius/2)
+
+    const outerArc = d3.arc()
+        .innerRadius(radius / 2)
+        .outerRadius(radius)
+
+    // Draw seasons
+    wheel.selectAll("path.season")
+        .data(seasonData)
+        .enter()
+        .append("path")
+            .attr("class", "season")
+            .attr("d", arc)
+            .attr("fill", d => colorSeason(d.data.key))
+            .attr("stroke", "white")
+            .style("stroke-width", "2px")
+            .style("opacity", 0.7)
+            .on("mouseover", function(){
+                d3.select(this).style("opacity", 1);
+            })
+            .on("mouseout", function(){
+                const season = d3.select(this).data()[0].data.key;
+                const index = seasons.indexOf(season);
+                if(!ctx.SELECTED_SEASON[index]){
+                    d3.select(this).style("opacity", 0.7);
+                }
+            })
+            .on("click", function(){
+                // If season already selected, change opacity to 0.7. Else change to 1
+                const season = d3.select(this).data()[0].data.key;
+                const index = seasons.indexOf(season);
+
+                d3.select(this).style("opacity", ctx.SELECTED_SEASON[index] ? 0.7 : 1);
+                ctx.SELECTED_SEASON[index] = !ctx.SELECTED_SEASON[index];
+            })
+
+    // Draw times
+    wheel.selectAll("path.time")
+        .data(timeData)
+        .enter()
+        .append("path")
+            .attr("class", "time")
+            .attr("d", outerArc)
+            .attr("fill", "grey")
+            .attr("stroke", "white")
+            .style("stroke-width", "2px")
+            .style("opacity", 0.7)
+            .on("mouseover", function(){
+                d3.select(this).style("opacity", 1);
+            })
+            .on("mouseout", function(){
+                const time = d3.select(this).data()[0].data.key;
+                const index = times.indexOf(time);
+                if(!ctx.SELECTED_TIME[index]){
+                    d3.select(this).style("opacity", 0.7);
+                }
+            })
+            .on("click", function(){
+                // If time already selected, change opacity to 0.7. Else change to 1
+                const time = d3.select(this).data()[0].data.key;
+                const index = times.indexOf(time);
+
+                d3.select(this).style("opacity", ctx.SELECTED_TIME[index] ? 0.7 : 1);
+                ctx.SELECTED_TIME[index] = !ctx.SELECTED_TIME[index];
+            });
+
+    // Add season labels
+    wheel.selectAll("path.season-text-path")
+        .data(seasonData)
+        .enter()
+        .append("path")
+            .attr("class", "season-text-path")
+            .attr("id", (d, i) => `season-text-path-${i}`)
+            .attr("d", arc.innerRadius(radius/4).outerRadius(radius/4))
+    wheel.selectAll("text.season-text")
+        .data(seasonData)
+        .enter()
+        .append("text")
+            .append("textPath")
+                .attr("xlink:href", (d, i) => `#season-text-path-${i}`)
+                .attr("startOffset", "25%")
+                .style("text-anchor", "middle")
+                .text(d => d.data.key);
+
+    // Add time labels
+    wheel.selectAll("text.time-text")
+        .data(timeData)
+        .enter()
+        .append("text")
+            .attr("class","time-text")
+            .attr("transform", d => `translate(${outerArc.centroid(d)})`)
+            .attr("dy", "0.35em")
+            .style("text-anchor", "middle")
+            .text(d => d.data.key);
+}

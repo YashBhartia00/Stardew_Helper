@@ -11,10 +11,15 @@
 
 /* Map */
 #map {
-    /* max-height: 560px;
-    max-width: 919px; */
+    max-height: 560px;
+    max-width: 919px; 
     width: 60vw;
     height: auto;
+}
+
+/* Season wheel */
+#seasonWheel {
+    margin: 20px;
 }
 
 /* Style search/filter container*/
