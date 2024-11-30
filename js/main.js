@@ -143,8 +143,6 @@ function setPolygons(){
         [0.4, 0.29],
         [0.42, 0.27],
         [0.427, 0.25],
-        
-        
     ]
 
     const areas = {
@@ -240,6 +238,7 @@ function createViz(){
     
     mapInit();
     loadData();
+    seasonWheel();
 
 }
 
@@ -268,6 +267,10 @@ function addFishToList(fish){
 }
 
 function displayFishInfo(fish){
+    // Put map under overlay
+    const mapContainer = document.getElementById('map');
+    mapContainer.style.zIndex = -1;
+
     const overlay = d3.select("body").append("div").attr("id", "fishInfoOverlay");
     const container = overlay.append("div").attr("id", "fishInfo");
 
@@ -277,6 +280,7 @@ function displayFishInfo(fish){
     .text("X")
     .on("click", function() {
         overlay.remove(); // Close the container on close
+        mapContainer.style.zIndex = 1; // Put map back on top
     });
 
 
@@ -456,7 +460,61 @@ function priceBarChart(selector, fishName){
     });
 }
 
+function seasonWheel(){
+    const seasons = ["Spring", "Summer", "Fall", "Winter"];
+    const size = 200;
+    const radius = size / 2;
 
-// Add map to container
+    const seasonWheel = d3.select("#seasonWheel")
+        .append("svg")
+            .attr("width", size)
+            .attr("height", size)
+        .append("g")
+            .attr("transform", `translate(${radius}, ${radius})`);
+    
+    const color = d3.scaleOrdinal()
+        .domain(seasons)
+        .range(["#00FF00", "#FFD700", "#FF8C00", "#1E90FF"]);
+
+    const pie = d3.pie()
+        .value(1);
+    
+    const data = pie(seasons.map(season => ({key: season, value: 1})));
+
+    const arc = d3.arc()
+                .innerRadius(50)
+                .outerRadius(radius)
+
+    seasonWheel.selectAll("path")
+        .data(data)
+        .enter()
+        .append("path")
+            .attr("d", arc)
+            .attr("fill", d => color(d.data.key))
+            .attr("stroke", "black")
+            .style("stroke-width", "2px")
+            .style("opacity", 0.7)
+
+    // Add labels
+    seasonWheel.selectAll("path.text-path")
+            .data(data)
+            .enter()
+            .append("path")
+                .attr("class", "text-path")
+                .attr("id", (d, i) => `text-path-${i}`)
+                .attr("d", arc.innerRadius(70).outerRadius(70))
+    seasonWheel.selectAll("text")
+            .data(data)
+            .enter()
+            .append("text")
+                .append("textPath")
+                    .attr("xlink:href", (d, i) => `#text-path-${i}`)
+                    .attr("startOffset", "25%")
+                    .style("text-anchor", "middle")
+                    .text(d => d.data.key);
+
+    
+  
+}
 
 

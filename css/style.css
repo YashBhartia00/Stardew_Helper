@@ -11,11 +11,10 @@
 
 /* Map */
 #map {
-    max-height: 560px;
-    max-width: 919px;
+    /* max-height: 560px;
+    max-width: 919px; */
     width: 60vw;
     height: auto;
-    /* margin: 0 auto; */
 }
 
 /* Style search/filter container*/
@@ -30,26 +29,37 @@
     box-sizing: border-box;
     overflow-y: auto;
     max-width: 250px;
-    width: 20%;
+    min-width: 130px;
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
 }
 
 
 #fishSearch{
-background-image: url('../data/images/search.png'); /* Add a search icon to input */
-  background-position: 10px 12px; /* Position the search icon */
-  background-repeat: no-repeat; /* Do not repeat the icon image */
-  width: 100%; /* Full-width */
-  font-size: 16px; /* Increase font-size */
-  padding: 12px 20px 12px 40px; /* Add some padding */
-  border: 1px solid #ddd; /* Add a grey border */
-  margin-bottom: 12px; /* Add some space below the input */
-  box-sizing: border-box;
+    background-image: url('../data/images/search.png'); /* Add a search icon to input */
+    background-position: 10px center; /* Position the search icon */
+    background-repeat: no-repeat; /* Do not repeat the icon image */
+    background-size: 20px 20px;
+    width: 100%; /* Full-width */
+    font-size: 16px; /* Increase font-size */
+    padding: 12px 20px 12px 40px; /* Add some padding */
+    border: 1px solid #ddd; /* Add a grey border */
+    margin-bottom: 12px; /* Add some space below the input */
+    box-sizing: border-box;
+    max-width: 170px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
+
 
 #fishList{
     list-style-type: none; /* Remove list bullets */
     padding: 0;
     margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
 }
 
 #fishList li{
@@ -61,6 +71,11 @@ background-image: url('../data/images/search.png'); /* Add a search icon to inpu
     font-size: 18px; /* Increase the font-size */
     color: black; /* Add a black text color */
     display: block; /* Make it into a block element to fill the whole list */
+    max-width: 170px;
+}
+
+#fishList li:first-child {
+    margin-top: 0px; /* fix top border being erased trying to prevent double borders*/
 }
 
 #fishList li:hover{
