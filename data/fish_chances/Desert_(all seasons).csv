@@ -1,0 +1,5 @@
+Begin Rod,Weather,Time,Level,,difficulty,motionType,minFishSize,maxFishSize,time,season(ignored),weather,favourite bait(not used),Optimal depth,base chance?,depth penalty?,req level,,,RNG,,,,Water depth,3,Weather,Sunny,Recalc Y ->
+,,First Pair Only,,0,1,2,3,4,5,6,7,8,9,10,11,12,num1,num2,num3,Independent chance,Curiosity Chance,,Fishing level,9,Time,1200,
+1,1,1,1,153 Green Algae,5,floater,5,30,600 2600,spring summer fall winter,both,-1,0,0.3,0,0,0.3,0,0.48,48.00%,48.00%,24.54%,Curiorisy Lure,Y,Train Rod,N,
+1,1,1,1,164 Sandfish,65,mixed,8,24,600 2000,spring summer fall winter,both,682 .2,1,0.65,0.1,0,0.65,0.065,0.83,83.00%,83.00%,53.77%,,,Total Chance,94.08%,
+1,1,1,1,165 Scorpion Carp,90,dart,12,32,600 2000,spring summer fall winter,both,683 .4,2,0.15,0.1,4,0.15,0.015,0.33,33.00%,33.00%,15.77%,,,,,

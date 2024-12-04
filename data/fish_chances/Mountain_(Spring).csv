@@ -1,0 +1,7 @@
+Begin Rod,Weather,Time,Level,,difficulty,motionType,minFishSize,maxFishSize,time,season(ignored),weather,favourite bait(not used),Optimal depth,base chance?,depth penalty?,req level,,,RNG,,,,Water depth,1,Weather,Sunny,Recalc Y ->
+,,First Pair Only,,0,1,2,3,4,5,6,7,8,9,10,11,12,num1,num2,num3,Independent chance,Curiosity Chance,,Fishing level,0,Time,600,
+1,1,1,1,136 -1 Largemouth Bass,50,mixed,11,30,600 1900,spring summer fall winter,both,685 .35,3,0.4,0.2,0,0.4,0.08,0.24,24.00%,24.00%,11.63%,Curiorisy Lure,N,Train Rod,,
+1,1,1,1,142 -1 Carp,15,mixed,15,50,600 2600,spring summer fall,both,682 .2,1,0.45,0.1,0,0.45,0.045,0.45,45.00%,45.00%,24.03%,,,Total Chance,88.41%,
+1,1,1,1,153 -1 Green Algae,5,floater,5,30,600 2600,spring summer fall winter,both,-1,0,0.3,0,0,0.3,0,0.3,30.00%,30.00%,14.92%,,,,,
+1,1,1,1,700 -1 Bullhead,46,smooth,12,30,600 2600,spring summer fall winter,both,681 .25,2,0.35,0.2,0,0.35,0.07,0.28,28.00%,28.00%,13.80%,,,,,
+1,1,1,1,702 -1 Chub,35,dart,12,24,600 2600,spring summer fall winter,both,-1,1,0.45,0.1,0,0.45,0.045,0.45,45.00%,45.00%,24.03%,,,,,
