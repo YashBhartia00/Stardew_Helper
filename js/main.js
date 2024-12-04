@@ -158,7 +158,10 @@ function setPolygons(){
         }
     });
 
+    
     // Add new polygons
+    let selectedLocations = [];
+    let hoveredLocation = null;
     Object.keys(areas).forEach(key => {
         const absoluteCoords = convertRelativeToAbsolute(areas[key]);
         polygons[key] = L.polygon(absoluteCoords, {
@@ -178,19 +181,50 @@ function setPolygons(){
         polygons[key].locationKey = locationKey;
 
         polygons[key].on('mouseover', function(e){
+            hoveredLocation = this.locationKey;
             this.setStyle({
                 fillOpacity: 0.7
             })
-            filterFishListByArea(this.locationKey);
+            const allLocations = selectedLocations.concat(hoveredLocation);
+            filterFishListByArea(allLocations);
         });
 
         polygons[key].on('mouseout', function(e){
             this.setStyle({
-                fillOpacity: 0.2
+                fillOpacity: selectedLocations.includes(this.locationKey) ? 0.7 : 0.2
             })
-            resetFishList();
+            hoveredLocation = null;
+            // Update the fish list based on selected areas
+            if(selectedLocations.length > 0){
+                filterFishListByArea(selectedLocations);
+            } else {
+                resetFishList();
+            }
         });
 
+        polygons[key].on('click', function(e){
+            const index = selectedLocations.indexOf(this.locationKey);
+            if(index > -1){
+                // Area is already selected, deselect it
+                selectedLocations.splice(index, 1);
+                this.setStyle({
+                    fillOpacity: 0.2
+                });
+            } else {
+                // Area is not selected, select it
+                selectedLocations.push(this.locationKey);
+                this.setStyle({
+                    fillOpacity: 0.7
+                });
+            }
+
+            // Update the fish list based on selected areas
+            if(selectedLocations.length > 0){
+                filterFishListByArea(selectedLocations);
+            } else {
+                resetFishList();
+            }
+        });
 
         polygons[key].addTo(map);
     });
@@ -369,15 +403,15 @@ function addFishToList(){
         });
 }
 
-function filterFishListByArea(area){
+function filterFishListByArea(areas){
     const container = d3.select("#fishList");
     container.selectAll("li")
         .style("display", function(d) {
-            console.log(d.location);
-            if(d.location.includes(area)){
-                return null; // Display
-            }
-            return "none"; // Hide
+            return areas.every(area => d.location.includes(area)) ? null : "none";
+            // if(d.location.includes(area)){
+            //     return null; // Display
+            // }
+            // return "none"; // Hide
         });
 }
 
