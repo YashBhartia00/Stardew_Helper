@@ -1,0 +1,116 @@
+name,type,price
+Egg,Animal Products,50
+Milk,Animal Products,125
+Cheese,Artisan Goods,230
+Coffee,Artisan Goods,15
+Mayonnaise,Artisan Goods,190
+Void_Mayonnaise,Artisan Goods,275
+Clam,Crab Pot Items,"50 
+
+
+ 62 
+
+
+ 75 
+
+
+ 100"
+Crab,Crab Pot Items,100
+Crayfish,Crab Pot Items,75
+Lobster,Crab Pot Items,120
+Mussel,Crab Pot Items,"30 
+
+
+ 37 
+
+
+ 45 
+
+
+ 60"
+Periwinkle,Crab Pot Items,20
+Shrimp,Crab Pot Items,60
+Snail,Crab Pot Items,65
+Amaranth,Crop,150
+Artichoke,Crop,160
+Beet,Crop,100
+Blue_Jazz,Crop,50
+Blueberry,Crop,50
+Bok_Choy,Crop,80
+Cauliflower,Crop,175
+Corn,Crop,50
+Cranberries,Crop,75
+Eggplant,Crop,60
+Garlic,Crop,60
+Green_Bean,Crop,40
+Hot_Pepper,Crop,40
+Kale,Crop,110
+Melon,Crop,250
+Parsnip,Crop,35
+Pineapple,Crop,300
+Poppy,Crop,140
+Potato,Crop,80
+Pumpkin,Crop,320
+Radish,Crop,90
+Red_Cabbage,Crop,260
+Rhubarb,Crop,220
+Taro_Root,Crop,100
+Tomato,Crop,60
+Yam,Crop,160
+Any_Fish,Fish,null
+Bream,Fish,45
+Carp,Fish,30
+Eel,Fish,85
+Flounder,Fish,100
+Green_Algae,Fish,15
+Largemouth_Bass,Fish,100
+Midnight_Carp,Fish,150
+Rainbow_Trout,Fish,65
+Salmon,Fish,75
+Sardine,Fish,40
+Sea_Cucumber,Fish,75
+Seaweed,Fish,"20 
+
+
+ 25 
+
+
+ 30 
+
+
+ 40"
+Squid,Fish,80
+Sunfish,Fish,30
+Tuna,Fish,100
+White_Algae,Fish,25
+Blackberry,Foraged Goods,20
+Cave_Carrot,Foraged Goods,25
+Coconut,Foraged Goods,100
+Common_Mushroom,Foraged Goods,40
+Dandelion,Foraged Goods,40
+Fiddlehead_Fern,Foraged Goods,90
+Ginger,Foraged Goods,60
+Hazelnut,Foraged Goods,90
+Leek,Foraged Goods,60
+Morel,Foraged Goods,150
+Wild_Horseradish,Foraged Goods,50
+Wild_Plum,Foraged Goods,80
+Winter_Root,Foraged Goods,70
+Oil,General Store Items,200
+Rice,General Store Items,200
+Sugar,General Store Items,100
+Vinegar,General Store Items,200
+Wheat_Flour,General Store Items,100
+Bread,Ingredient Dishes,60
+Fried_Egg,Ingredient Dishes,35
+Hashbrowns,Ingredient Dishes,120
+Omelet,Ingredient Dishes,125
+Pancakes,Ingredient Dishes,80
+Tortilla,Ingredient Dishes,50
+Maple_Syrup,Miscellaneous,200
+Moss,Miscellaneous,5
+Squid_Ink,Miscellaneous,110
+Apple,Tree Fruit,100
+Apricot,Tree Fruit,50
+Banana,Tree Fruit,150
+Mango,Tree Fruit,130
