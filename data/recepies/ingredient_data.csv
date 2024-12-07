@@ -5,29 +5,11 @@ Cheese,Artisan Goods,230
 Coffee,Artisan Goods,15
 Mayonnaise,Artisan Goods,190
 Void_Mayonnaise,Artisan Goods,275
-Clam,Crab Pot Items,"50 
-
-
- 62 
-
-
- 75 
-
-
- 100"
+Clam,Crab Pot Items,50
 Crab,Crab Pot Items,100
 Crayfish,Crab Pot Items,75
 Lobster,Crab Pot Items,120
-Mussel,Crab Pot Items,"30 
-
-
- 37 
-
-
- 45 
-
-
- 60"
+Mussel,Crab Pot Items,30
 Periwinkle,Crab Pot Items,20
 Shrimp,Crab Pot Items,60
 Snail,Crab Pot Items,65
@@ -69,16 +51,7 @@ Rainbow_Trout,Fish,65
 Salmon,Fish,75
 Sardine,Fish,40
 Sea_Cucumber,Fish,75
-Seaweed,Fish,"20 
-
-
- 25 
-
-
- 30 
-
-
- 40"
+Seaweed,Fish,20
 Squid,Fish,80
 Sunfish,Fish,30
 Tuna,Fish,100
