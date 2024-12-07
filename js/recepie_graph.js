@@ -32,12 +32,13 @@ function loadIngredientData(nodes, callback) {
         const ingredientTypeMap = {};
         ingredientData.forEach(d => {
             ingredientTypeMap[d.name] = d.type;
+            d.price = +d.price || 0;
         });
 
         // Get unique types and create type nodes
         const types = [...new Set(ingredientData.map(d => d.type))];
         types.forEach(type => {
-            nodes[type] = { id: type, group: 'type', type: type };
+            nodes[type] = { id: type, group: 'type', type: type};
         });
 
         callback(ingredientData, ingredientTypeMap, typeColor);
@@ -49,24 +50,27 @@ function loadMainData(nodes, links, ingredientData, ingredientTypeMap, typeColor
     d3.csv('data/recepies/graph_data.csv').then(function(data) {
         // Create nodes and links from the data
         data.forEach(d => {
+            //use ingredent data as price source as the price is not available in the graph data
+            if(!nodes[d.ingredient]) { nodes[d.ingredient] = { id: d.ingredient, group: 'ingredient', type: ingredientTypeMap[d.ingredient] , price: ingredientData.find(x => x.name === d.ingredient).price}; }
+
             // Add recipe nodes
-            if (!nodes[d.recepie]) nodes[d.recepie] = { id: d.recepie, group: 'recepie' };
+            if (!nodes[d.recepie]) nodes[d.recepie] = { id: d.recepie, group: 'recepie'};
             // Add ingredient nodes
-            if (!nodes[d.ingredient]) nodes[d.ingredient] = { id: d.ingredient, group: 'ingredient', type: ingredientTypeMap[d.ingredient] };
+            // if (!nodes[d.ingredient]) nodes[d.ingredient] = { id: d.ingredient, group: 'ingredient', type: ingredientTypeMap[d.ingredient] , price: +d.price};
             // Add links from recipes to ingredients
-            links.push({ source: d.recepie, target: d.ingredient, value: +d.amount });
+            links.push({ source: d.ingredient, target: d.recepie, value: +d.amount });
         });
 
         // Add links from type nodes to ingredient nodes
-        ingredientData.forEach(d => {
-            if (nodes[d.name]) {
-                links.push({
-                    source: d.type,
-                    target: d.name,
-                    value: 1
-                });
-            }
-        });
+        // ingredientData.forEach(d => {
+        //     if (nodes[d.name]) {
+        //         links.push({
+        //             source: d.type,
+        //             target: d.name,
+        //             value: 1
+        //         });
+        //     }
+        // });
 
         // Convert nodes object to array
         const nodesArray = Object.values(nodes);
@@ -84,10 +88,11 @@ function loadMainData(nodes, links, ingredientData, ingredientTypeMap, typeColor
 // Create simulation
 function createSimulation(width, height) {
     const simulation = d3.forceSimulation()
-        .force('link', d3.forceLink().id(d => d.id))
+        .force('link', d3.forceLink().id(d => d.id).strength(-1))
         .force('charge', d3.forceManyBody().strength(-400))
-        .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('collision', d3.forceCollide().radius(30));
+        .force('center', d3.forceCenter(width / 2, height / 2).strength(0.1))
+        .force('collision', d3.forceCollide().radius(25))
+        // .force('maxDistance', maxDistanceForce(maxDistance)); // Adding the max distance force
     return simulation;
 }
 
@@ -100,7 +105,7 @@ function addZoom(svg, g) {
         });
     svg.call(zoom);
 }
-var opacityHighlight = 0.8;
+
 // Create nodes and links
 function createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, simulation) {
     // Add the links
@@ -113,7 +118,7 @@ function createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, sim
         .attr('marker-end', 'url(#arrowhead)')
         .attr('stroke-width', d => d.value)
         .attr('stroke', '#999')
-        .style('opacity', opacityHighlight);
+        .style('opacity', 0.6);
 
     // Add the nodes as groups
     const node = g.append('g')
@@ -121,7 +126,7 @@ function createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, sim
         .selectAll('g')
         .data(nodesArray)
         .enter().append('g')
-        .style('opacity', opacityHighlight)
+        .style('opacity', d => d.group === 'ingredient' ? 0.7 : 1)
         .call(d3.drag()
             .on('start', defineDrag.dragstarted)
             .on('drag', defineDrag.dragged)
@@ -131,14 +136,20 @@ function createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, sim
     node.filter(d => d.group === 'ingredient' || d.group === 'recepie')
         .append('image')
         .attr('xlink:href', d => `data/images/recepies_ingredients/${d.id}.png`)
-        .attr('x', -16)
-        .attr('y', -16)
-        .attr('width', 32)
-        .attr('height', 32);
+        .attr('x', d => d.price ? -Math.sqrt(d.price) / 2 : -16)
+        .attr('y', d => d.price ? -Math.sqrt(d.price) / 2 : -16)
+        .attr('width', d => d.price ? Math.sqrt(d.price) : 32)
+        .attr('height', d => d.price ? Math.sqrt(d.price) : 32)
+        // .on('error', function() { d3.select(this).attr('xlink:href', 'data/images/recepies_ingredients/default.png'); }); // Fallback for missing images
 
     // Append circles for outlines
     node.append('circle')
-        .attr('r', d => d.group === 'type' ? 30 : 16)
+        .attr('r', d => {
+            if (d.group === 'type') return 30;
+            if (d.group === 'ingredient') {console.log(d.price); return Math.sqrt(d.price) / 2 || 16; } // Handle NaN values
+            if (d.group === 'recepie') return Math.sqrt(d.price) / 2 || 16; // Handle NaN values
+            return 16;
+        })
         .attr('stroke', d => typeColor(d.type))
         .attr('fill', d => {
             if (d.group === 'type') return typeColor(d.type);
@@ -157,48 +168,80 @@ function createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, sim
         .attr('fill', '#fff');
 
     // Add hover interactions
-    node.on('mouseover', defineHover.focus)
-        .on('mouseout', defineHover.unfocus);
+    node.on('mouseover', function(event, d) {
+        if (d.group === 'recepie') {
+            node.filter(n => n.group === 'ingredient' && linkedByIndex[`${d.index},${n.index}`])
+                .style('opacity', 1);
+        }
+    }).on('mouseout', function(event, d) {
+        if (d.group === 'recepie') {
+            node.filter(n => n.group === 'ingredient' && linkedByIndex[`${d.index},${n.index}`])
+                .style('opacity', 0.7);
+        }
+    });
 
-    // Add click event to type nodes to cluster ingredient nodes
-    node.filter(d => d.group === 'type')
-        .on('click', function(event, typeNode) {
-            // On click, apply forces to attract ingredient nodes of this type
-            simulation.force('x', d3.forceX(typeNode.x)
-                .strength(d => d.type === typeNode.type ? 0.5 : 0));
-            simulation.force('y', d3.forceY(typeNode.y)
-                .strength(d => d.type === typeNode.type ? 0.5 : 0));
+    // Add click event to type nodes to create and delete links
+    // node.filter(d => d.group === 'type')
+    //     .on('click', function(event, typeNode) {
+    //         // Create links from type node to its ingredients
+    //         const typeLinks = links.filter(l => l.source.type === typeNode.id || l.target.type === typeNode.id);
+    //         const newLinks = typeLinks.map(l => ({ source: typeNode.id, target: l.target.id, value: 1 }));
 
-            simulation.alpha(0.5).restart();
-        });
+    //         // Add new links to the graph
+    //         const newLinkElements = g.selectAll('.new-link')
+    //             .data(newLinks)
+    //             .enter().append('line')
+    //             .attr('class', 'new-link')
+    //             .attr('stroke', '#999')
+    //             .attr('stroke-width', 1)
+    //             .style('opacity', 0.6);
+
+    //         // Update the simulation with new links
+    //         simulation.force('link').links([...links, ...newLinks]);
+    //         simulation.alpha(0.5).restart();
+
+    //         // Remove the new links after a delay
+    //         setTimeout(() => {
+    //             newLinkElements.remove();
+    //             simulation.force('link').links(links);
+    //             simulation.alpha(0.5).restart();
+    //         }, 2000); // Adjust the delay as needed
+    //     });
 
     return { node, link };
 }
 
 // Define drag interactions
 function defineDrag(simulation) {
-    function dragstarted(event, d) {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        d.fx = d.x;
-        d.fy = d.y;
-    }
-
-    function dragged(event, d) {
-        d.fx = event.x;
-        d.fy = event.y;
-    }
-
-    function dragended(event, d) {
-        if (!event.active) simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
-    }
-
     return d3.drag()
-        .on('start', dragstarted)
-        .on('drag', dragged)
-        .on('end', dragended);
+        .on('start', function(event, d) {
+            dragstarted(event, d, simulation);
+        })
+        .on('drag', function(event, d) {
+            dragged(event, d);
+        })
+        .on('end', function(event, d) {
+            dragended(event, d, simulation);
+        });
 }
+
+function dragstarted(event, d, simulation) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+}
+
+function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+}
+
+function dragended(event, d, simulation) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+}
+
 
 // Define hover interactions
 function defineHover(node, link, linkedByIndex) {
@@ -210,13 +253,13 @@ function defineHover(node, link, linkedByIndex) {
     // Focus and unfocus functions for hover interactions
     function focus(event, d) {
         const index = d.index;
-        node.style('opacity', o => isConnected(d, o) ? opacityHighlight : opacityDim);
-        link.style('opacity', o => o.source.index === index || o.target.index === index ? opacityHighlight : opacityDim);
+        node.style('opacity', o => isConnected(d, o) ? 1 : 0.2);
+        link.style('opacity', o => o.source.index === index || o.target.index === index ? 1 : 0.2);
     }
 
     function unfocus() {
-        node.style('opacity', opacityHighlight);
-        link.style('opacity', opacityHighlight);
+        node.style('opacity', d => d.group === 'ingredient' ? 0.7 : 1);
+        link.style('opacity', 0.6);
     }
 
     node.on('mouseover', focus)
@@ -226,15 +269,24 @@ function defineHover(node, link, linkedByIndex) {
 // Main execution
 const { svg, width, height } = initSvg();
 defineArrowMarkers(svg);
+
 const g = svg.append('g');
+
+// Append group for type hulls after creating 'g'
+const typeHulls = g.append('g')
+    .attr('class', 'type-hulls');
 
 // Declare nodes and links in the main scope
 const nodes = {};
 const links = [];
+const maxDistance = 200; // Set the maximum distance
+const simulation = createSimulation(width, height, maxDistance);
 
 loadIngredientData(nodes, function(ingredientData, ingredientTypeMap, typeColor) {
     loadMainData(nodes, links, ingredientData, ingredientTypeMap, typeColor, function(nodesArray, links, linkedByIndex) {
         const simulation = createSimulation(width, height);
+        // const maxDistance = 20; // Set the maximum distance
+        // const simulation = createSimulation(width, height, maxDistance);
         addZoom(svg, g);
         const { node, link } = createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, simulation);
         node.call(defineDrag(simulation));
@@ -244,18 +296,64 @@ loadIngredientData(nodes, function(ingredientData, ingredientTypeMap, typeColor)
         simulation
             .nodes(nodesArray)
             .on('tick', function() {
+                // Update links
                 link
                     .attr('x1', d => d.source.x)
                     .attr('y1', d => d.source.y)
                     .attr('x2', d => d.target.x)
                     .attr('y2', d => d.target.y);
 
+                // Update nodes
                 node.attr('transform', d => `translate(${d.x},${d.y})`);
+
+                // Update hulls for each type
+                // const types = d3.groups(nodesArray.filter(d => d.group === 'ingredient'), d => d.type);
+
+                // const hulls = typeHulls.selectAll('path')
+                //     .data(types);
+
+                // hulls.enter()
+                //     .append('path')
+                //     .attr('class', 'hull')
+                //     .merge(hulls)
+                //     .attr('d', function(d) {
+                //         const points = d[1].map(n => [n.x, n.y]);
+                //         if (points.length < 3) return null;
+                //         const hull = d3.polygonHull(points);
+                //         return 'M' + hull.join('L') + 'Z';
+                //     })
+                //     .attr('fill', d => typeColor(d[0]))
+                //     .attr('stroke', d => typeColor(d[0]))
+                //     .attr('stroke-width', 1)
+                //     .attr('opacity', 0.2);
+
+                // hulls.exit().remove();
             });
 
         simulation.force('link')
             .links(links)
-            .distance(100)
-            .strength(0.5);
+            .distance(50)
+            .strength(0.8);
+            
+        d3.select('#resetButton').on('click', function() {
+            simulation.alpha(1).restart();
+            simulation.force('x', null);
+            simulation.force('y', null);
+        });
     });
 });
+// function maxDistanceForce(radius) {
+//     return function (d) {
+//         var dx = d.x - width / 2,
+//             dy = d.y - height / 2,
+//             distance = Math.sqrt(dx * dx + dy * dy);
+
+//         if (distance > radius) {
+//             var angle = Math.atan2(dy, dx);
+//             d.x = width / 2 + Math.cos(angle) * radius;
+//             d.y = height / 2 + Math.sin(angle) * radius;
+//         }
+//     };
+// }
+
+// Reset button functionality
