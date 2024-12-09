@@ -13,6 +13,11 @@ const ctx = {
 let map, imageOverlay
 const polygons = {}
 
+/**
+ * Converts relative coordinates to absolute coordinates
+ * @param {*} relativeCoords 
+ * @returns absolute coordinates calculated based on the map dimensions
+ */
 function convertRelativeToAbsolute(relativeCoords){
     return relativeCoords.map(coords => [
         coords[0] * ctx.MAP_H,
@@ -20,7 +25,9 @@ function convertRelativeToAbsolute(relativeCoords){
     ]);
 }
 
-
+/**
+ * Computes the dimensions of the map based on the screen width
+ */
 function computeMapDimensions(){
     const screenWidth = window.innerWidth * 0.45;
     const aspectRatio = 919/560;
@@ -29,6 +36,9 @@ function computeMapDimensions(){
     ctx.MAP_W = screenWidth;
 }
 
+/**
+ * Sets the polygons for fishing locations on the map
+ */
 function setPolygons(){
     const areaSeaRelative = [
         [0.17, 0.6],
@@ -188,10 +198,7 @@ function setPolygons(){
         }
     });
 
-   
-
     // Add new polygons
-    let hoveredLocation = null;
     Object.keys(areas).forEach(key => {
         const absoluteCoords = convertRelativeToAbsolute(areas[key]);
         let locationKey;
@@ -217,7 +224,6 @@ function setPolygons(){
         polygons[key].locationKey = locationKey;
 
         polygons[key].on('mouseover', function(e){
-            hoveredLocation = this.locationKey;
             this.setStyle({
                 fillOpacity: 0.7
             })
@@ -226,14 +232,7 @@ function setPolygons(){
         polygons[key].on('mouseout', function(e){
             this.setStyle({
                 fillOpacity: ctx.SELECTED_AREAS.includes(this.locationKey) ? 0.7 : 0.2
-            })
-            hoveredLocation = null;
-            // Update the fish list based on selected areas
-            if(ctx.SELECTED_AREAS.length > 0){
-                filterFish(ctx.SELECTED_AREAS);
-            } else {
-                resetFishList();
-            }
+            });
         });
 
         polygons[key].on('click', function(e){
@@ -261,6 +260,9 @@ function setPolygons(){
 
 }
 
+/**
+ * Initializes the map
+ */
 function mapInit(){
     // Compute map dimensions
     computeMapDimensions();
@@ -306,6 +308,9 @@ function mapInit(){
     });
 }
 
+/**
+ * Main function to create the visualization
+ */
 function createViz(){
     ctx.SELECTED_TIME = new Array(21).fill(false);
     ctx.SELECTED_SEASON = new Array(4).fill(false);
@@ -316,6 +321,9 @@ function createViz(){
 
 }
 
+/**
+ * Loads the data from the csv files
+ */
 function loadData(){
     const files = [
         "data/fish_detail.csv",
@@ -359,7 +367,10 @@ function loadData(){
     })
 }
 
-
+/**
+ * Processes the fish data into a more usable format
+ * @param {*} data raw fish data
+ */
 function processFishData(data){
     let fishData = data.map(fish => {
         let season = fish.Season.split('\n').map(s => s.trim());
@@ -482,13 +493,11 @@ function filterFish(){
         });
 }
 
-function resetFishList(){
-    const container = d3.select("#fishList");
-    container.selectAll("li")
-        .style("display", null);
-}
 
-
+/**
+ * Displays the fish information in an overlay
+ * @param {*} fish fish object to display
+ */
 function displayFishInfo(fish){
     // Put map under overlay
     const mapContainer = document.getElementById('map');
@@ -509,7 +518,6 @@ function displayFishInfo(fish){
         }, 500);
         
     });
-
 
     // Add fish name
     container.append("div")
@@ -566,7 +574,9 @@ function displayFishInfo(fish){
 
 
 
-
+/**
+ * Filters the fish list based on the search input
+ */
 function FilterByName() {
     var input, filter, ul, li, a, i, txtValue;
     input = document.getElementById('fishSearch');
@@ -590,7 +600,11 @@ function FilterByName() {
     }
 }
 
-
+/**
+ * Creates a bar chart to display the price breakdown of a fish
+ * @param {*} selector 
+ * @param {*} fishName 
+ */
 function priceBarChart(selector, fishName){
     let margin = {top: 10, right: 30, bottom: 20, left: 40},
         width = 460 - margin.left - margin.right,
@@ -693,6 +707,9 @@ function priceBarChart(selector, fishName){
     });
 }
 
+/**
+ * Creates a pie chart to create a season wheel for selection
+ */
 function seasonWheel(){
     const seasons = ["Spring", "Summer", "Fall", "Winter"];
     const size = 200;
@@ -747,7 +764,9 @@ function seasonWheel(){
                     .text(d => d.data.key);
 }
 
-
+/**
+ * Creates a time wheel for selection with seasons and times
+ */
 function timeWheel(){
     const seasons = ["Spring", "Summer", "Fall", "Winter"];
     const times = d3.range(6, 27).map(hour => `${hour % 24}:00`);
@@ -869,12 +888,15 @@ function timeWheel(){
             .attr("transform", d => `translate(${outerArc.centroid(d)})`)
             .attr("dy", "0.35em")
             .style("text-anchor", "middle")
-            .text(d => d.data.key);
-
-    // Todo: filter fish by selected time and season
-    
+            .text(d => d.data.key);    
 }
 
+/**
+ * Computes the hourly possible profit for a given hour and season
+ * @param {*} hour  the hour to compute the profit for
+ * @param {*} season the season to compute the profit for
+ * @returns the hourly profit
+ */
 function computeHourlyProfit(hour, season){
     let total = 0;
     const fishPerHour = 2;
@@ -897,7 +919,9 @@ function computeHourlyProfit(hour, season){
     return 10; // Placeholder
 }
 
-
+/**
+ * Creates a radar chart to display the hourly profit for each season
+ */
 function fishAveragePricePerTime(){
     const times = d3.range(6, 27).map(hour => `${hour}`);
     const seasons = ["Spring", "Summer", "Fall", "Winter"];
@@ -928,6 +952,9 @@ function fishAveragePricePerTime(){
     RadarChart("#radarChart", data, config);
 }
 
+/**
+ * Creates a selector for the weather
+ */
 function createWeatherSelector() {
     ctx.SELECTED_WEATHER = null;
 
