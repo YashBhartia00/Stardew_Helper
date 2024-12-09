@@ -13,18 +13,32 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body onload ="createViz()">
-    <div id="map">
-    </div>
-
-    <div class="searchContainer">
-        <div class="searchbox">
-            <input type="search" id="fishSearch" placeholder="search by name" onkeyup="myFilter()">
+    <div class="main-container">
+        <div class="left-panel">
+            <div class="searchContainer">
+                <div class="searchbox">
+                    <input type="search" id="fishSearch" placeholder="search by name" onkeyup="myFilter()">
+                </div>
+                <ul id="fishList"></ul>
+            </div>
         </div>
-        <ul id="fishList"></ul>
+
+        <div class="center-panel">
+            <div id="mapContainer">
+                <div id="map"></div>
+            </div>
+            <div id="filters">
+                <!-- <h1>Filters</h1> -->
+                <div id="seasonWheel"></div>
+            </div>
+        </div>
+    
+        <div class="right-panel">
+            <div id="radarChart"></div>
+        </div>
     </div>
 
-    <div id="seasonWheel"></div>
-    <div id="radarChart"></div>
     
+        
 </body>
 </html>

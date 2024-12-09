@@ -1,4 +1,13 @@
 const ctx = {
+    MAP_H: 0,
+    MAP_W: 0,
+    FISH_DATA: [],
+    fish_price_breakdown: [],
+    fish_detail: [],
+    fish_chances: {},
+    SELECTED_TIME: [],
+    SELECTED_SEASON: [],
+    SELECTED_AREAS: []
 }
 
 let map, imageOverlay
@@ -13,7 +22,7 @@ function convertRelativeToAbsolute(relativeCoords){
 
 
 function computeMapDimensions(){
-    const screenWidth = window.innerWidth * 0.6;
+    const screenWidth = window.innerWidth * 0.45;
     const aspectRatio = 919/560;
 
     ctx.MAP_H = screenWidth / aspectRatio;
@@ -127,8 +136,6 @@ function setPolygons(){
         [0.353, 0.38],
     ]
 
-    const areaSewersRelative = [
-    ]
     const areaPondRelative = [
         [0.41, 0.233],
         [0.387, 0.233],
@@ -142,13 +149,36 @@ function setPolygons(){
         [0.427, 0.25],
     ]
 
+    const areaDesertRelative = [
+        [0.95, 0.01],
+        [0.95, 0.05],
+        [0.98, 0.05],
+        [0.98, 0.01]
+    ]
+
+    const areaSecretWoodsRelative = [
+        [0.47, 0.08],   
+        [0.48, 0.06],   
+        [0.49, 0.05],   
+        [0.50, 0.045],  
+        [0.51, 0.05],   
+        [0.52, 0.06],   
+        [0.53, 0.08],   
+        [0.52, 0.11],   
+        [0.51, 0.12],   
+        [0.50, 0.125],   
+        [0.49, 0.12],   
+        [0.48, 0.11]    
+    ]
+
     const areas = {
         areaSea: areaSeaRelative,
         areaLake: areaLakeRelative,
         areaTownRiver: areaTownRiverRelative,
         areaForestRiver: areaForestRiverRelative,
-        areaSewers: areaSewersRelative,
-        areaPond: areaPondRelative
+        areaPond: areaPondRelative,
+        areaDesert: areaDesertRelative,
+        areaSecretWoods: areaSecretWoodsRelative
     };
 
     // Remove existing polygons if they exist
@@ -158,12 +188,20 @@ function setPolygons(){
         }
     });
 
-    
+   
+
     // Add new polygons
-    let selectedLocations = [];
     let hoveredLocation = null;
     Object.keys(areas).forEach(key => {
         const absoluteCoords = convertRelativeToAbsolute(areas[key]);
+        let locationKey;
+        if(key === "areaSea") locationKey = "Ocean";
+        else if(key === "areaLake") locationKey = "Mountain_Lake";
+        else if(key === "areaTownRiver") locationKey = "River_Town";
+        else if(key === "areaForestRiver") locationKey = "River_Forest";
+        else if(key === "areaPond") locationKey = "Forest_Pond";
+        else if(key === "areaDesert") locationKey = "The_Desert";
+        else if(key === "areaSecretWoods") locationKey = "Secret_Woods_Pond";
         polygons[key] = L.polygon(absoluteCoords, {
             color: 'white',
             fillColor: 'white',
@@ -171,12 +209,10 @@ function setPolygons(){
             fillOpacity: 0.2
         });
 
-        let locationKey;
-        if(key === "areaSea") locationKey = "Ocean";
-        else if(key === "areaLake") locationKey = "Mountain_Lake";
-        else if(key === "areaTownRiver") locationKey = "River_Town";
-        else if(key === "areaForestRiver") locationKey = "River_Forest";
-        else if(key === "areaPond") locationKey = "Forest_Pond";
+        polygons[key].bindTooltip(locationKey, {
+            sticky: true
+        });
+        
 
         polygons[key].locationKey = locationKey;
 
@@ -185,45 +221,39 @@ function setPolygons(){
             this.setStyle({
                 fillOpacity: 0.7
             })
-            const allLocations = selectedLocations.concat(hoveredLocation);
-            filterFishListByArea(allLocations);
         });
 
         polygons[key].on('mouseout', function(e){
             this.setStyle({
-                fillOpacity: selectedLocations.includes(this.locationKey) ? 0.7 : 0.2
+                fillOpacity: ctx.SELECTED_AREAS.includes(this.locationKey) ? 0.7 : 0.2
             })
             hoveredLocation = null;
             // Update the fish list based on selected areas
-            if(selectedLocations.length > 0){
-                filterFishListByArea(selectedLocations);
+            if(ctx.SELECTED_AREAS.length > 0){
+                filterFish(ctx.SELECTED_AREAS);
             } else {
                 resetFishList();
             }
         });
 
         polygons[key].on('click', function(e){
-            const index = selectedLocations.indexOf(this.locationKey);
+            const index = ctx.SELECTED_AREAS.indexOf(this.locationKey);
             if(index > -1){
                 // Area is already selected, deselect it
-                selectedLocations.splice(index, 1);
+                ctx.SELECTED_AREAS.splice(index, 1);
                 this.setStyle({
                     fillOpacity: 0.2
                 });
             } else {
                 // Area is not selected, select it
-                selectedLocations.push(this.locationKey);
+                ctx.SELECTED_AREAS.push(this.locationKey);
                 this.setStyle({
                     fillOpacity: 0.7
                 });
             }
 
-            // Update the fish list based on selected areas
-            if(selectedLocations.length > 0){
-                filterFishListByArea(selectedLocations);
-            } else {
-                resetFishList();
-            }
+            filterFish();
+
         });
 
         polygons[key].addTo(map);
@@ -245,6 +275,7 @@ function mapInit(){
         maxZoom:2,
         maxBounds: [[0,0], [ctx.MAP_H, ctx.MAP_W]],
         maxBoundsViscosity: 1.0,
+        zoomControl: false
     });
 
     // Load game map
@@ -276,16 +307,12 @@ function mapInit(){
 }
 
 function createViz(){
-    d3.select("mapContainer").append("svg")
-                            .attr("width", ctx.MAP_W)
-                            .attr("height", ctx.MAP_H)
-
     ctx.SELECTED_TIME = new Array(21).fill(false);
     ctx.SELECTED_SEASON = new Array(4).fill(false);
     mapInit();
     loadData();
-    // seasonWheel();
     timeWheel();
+    createWeatherSelector();
 
 }
 
@@ -362,16 +389,27 @@ function processFishData(data){
         }
 
         // If location is river (town+forest), change that elementt to town_river and town_forest (ie 2 locations)
-        let location = fish.Location.split('\n').flatMap(l => {
-            if(l == "River (Town+Forest)"){
-                return ['River_Town', 'River_Forest'];
-            } else if (l == "River (Forest)"){
-                return ['River_Forest'];
-            } else if (l == "River (Town)"){
-                return ['River_Town'];
-            } else {
-                return l.replace(" ", "_").trim();
-            }
+        let location = fish.Location.split('\n').flatMap(loc => {
+            return loc.split(',').flatMap(l => {
+                l = l.trim();
+                
+                // Handle river locations first with exact string matching
+                const riverLocations = {
+                    "River (Town+Forest)": ['River_Town', 'River_Forest'],
+                    "River (Forest)": ['River_Forest'],
+                    "River (Town)": ['River_Town']
+                };
+                
+                if (riverLocations[l]) {
+                    return riverLocations[l];
+                }
+                
+                // Handle other locations
+                return l
+                    .replace(/[()]/g, '') // Remove parentheses
+                    .replace(/\s+/g, '_') // Replace spaces with underscore
+                    .replace(/_+$/g, ''); // Remove trailing underscores
+            });
         })
 
 
@@ -388,9 +426,11 @@ function processFishData(data){
 
 
     ctx.FISH_DATA = fishData;
-    console.log(ctx.FISH_DATA);
 }
 
+/**
+ * Adds the list of fish to the fish list container
+ */
 function addFishToList(){
     const container = d3.select("#fishList");
     container.selectAll("li")
@@ -398,20 +438,39 @@ function addFishToList(){
         .enter()
         .append("li")
         .text(d => d.name)
-        .on("click", function(fish){
+        .on("click", function(event, fish){
             displayFishInfo(fish);
         });
 }
 
-function filterFishListByArea(areas){
+
+/**
+ * Filters the list of fish based on the selected time, season, area and weather
+ */
+function filterFish(){
     const container = d3.select("#fishList");
     container.selectAll("li")
         .style("display", function(d) {
-            return areas.every(area => d.location.includes(area)) ? null : "none";
-            // if(d.location.includes(area)){
-            //     return null; // Display
-            // }
-            // return "none"; // Hide
+            const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => d.location.includes(area)) : true;
+            // Season is a boolean array, if any season is selected, it should match
+            const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
+                return selected ? d.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
+            });
+            const matchesWeather = d.weather.includes(ctx.SELECTED_WEATHER) || d.weather.includes("Any");
+            const matchesTime = ctx.SELECTED_TIME == 0 ||
+                d.times.some(time => {
+                    const [start, end] = time.split(' - ').map(t => parseInt(t));
+                    return ctx.SELECTED_TIME.some(hour => {
+                        if(end > start){
+                            return hour >= start && hour <= end;
+                        } else {
+                            // Time after midnight
+                            return hour >= start || hour <= end;
+                        }
+                    })
+                });
+                return matchesWeather && matchesArea && matchesSeason? null : "none";
+            return matchesArea && matchesSeason && matchesWeather && matchesTime ? null : "none";
         });
 }
 
@@ -435,8 +494,12 @@ function displayFishInfo(fish){
     .attr("id", "close")
     .text("X")
     .on("click", function() {
-        overlay.remove(); // Close the container on close
+        overlay.classed("fade-out", true);
+        setTimeout(() =>{
+            overlay.remove(); // Close the container on close
         mapContainer.style.zIndex = 1; // Put map back on top
+        }, 500);
+        
     });
 
 
@@ -451,6 +514,7 @@ function displayFishInfo(fish){
     // Left section with fish name and image
     const leftSection = contentContainer.append("div").attr("class", "page-left")
 
+    console.log(fish.name);
 
     // Add Image and motif
     const imageContainer = leftSection.append("div").attr("id", "fishImageContainer");
@@ -676,7 +740,7 @@ function timeWheel(){
     const seasons = ["Spring", "Summer", "Fall", "Winter"];
     const times = d3.range(6, 27).map(hour => `${hour % 24}:00`);
 
-    const size = 350;
+    const size = 300;
     const radius = size / 2;
 
     const wheel = d3.select("#seasonWheel")
@@ -688,7 +752,7 @@ function timeWheel(){
 
     const colorSeason = d3.scaleOrdinal()
         .domain(seasons)
-        .range(["#00FF00", "#FFD700", "#FF8C00", "#1E90FF"]);
+        .range(["#36ab57", "#ffbf00", "#ff570a", "#32cbff"]);
 
     const pie = d3.pie()
         .value(1);
@@ -714,7 +778,7 @@ function timeWheel(){
             .attr("fill", d => colorSeason(d.data.key))
             .attr("stroke", "white")
             .style("stroke-width", "2px")
-            .style("opacity", 0.7)
+            .style("opacity", 0.5)
             .on("mouseover", function(){
                 d3.select(this).style("opacity", 1);
             })
@@ -732,6 +796,7 @@ function timeWheel(){
 
                 d3.select(this).style("opacity", ctx.SELECTED_SEASON[index] ? 0.7 : 1);
                 ctx.SELECTED_SEASON[index] = !ctx.SELECTED_SEASON[index];
+                filterFish();
             })
 
     // Draw times
@@ -762,6 +827,7 @@ function timeWheel(){
 
                 d3.select(this).style("opacity", ctx.SELECTED_TIME[index] ? 0.7 : 1);
                 ctx.SELECTED_TIME[index] = !ctx.SELECTED_TIME[index];
+                filterFish();
             });
 
     // Add season labels
@@ -792,6 +858,9 @@ function timeWheel(){
             .attr("dy", "0.35em")
             .style("text-anchor", "middle")
             .text(d => d.data.key);
+
+    // Todo: filter fish by selected time and season
+    
 }
 
 function computeHourlyProfit(hour, season){
@@ -835,8 +904,8 @@ function fishAveragePricePerTime(){
     });
 
     const config = {
-        w: 600,
-        h: 600,
+        w: 300,
+        h: 300,
         margin: {top: 50, right: 50, bottom: 50, left: 50},
 		maxValue: 0.5,
 		levels: 5,
@@ -847,4 +916,42 @@ function fishAveragePricePerTime(){
     RadarChart("#radarChart", data, config);
 }
 
-fishAveragePricePerTime();
+function createWeatherSelector() {
+    ctx.SELECTED_WEATHER = null;
+
+    const weatherDiv = d3.select("#filters")
+        .append("div")
+        .attr("class", "weather-selector");
+
+    weatherDiv.append("button")
+        .attr("class", "weather-btn")
+        .attr("data-weather", "sun")
+        .text("Sunny")
+        .on("click", function(){
+            d3.selectAll(".weather-btn").classed("selected", false);
+            const isSelected = ctx.SELECTED_WEATHER == 'Sun';
+            if(!isSelected){
+                d3.select(this).classed("selected", true);
+                ctx.SELECTED_WEATHER = 'Sun';
+            } else {
+                ctx.SELECTED_WEATHER = 'Any';
+            }
+            filterFish();
+        });
+    
+    weatherDiv.append("button")
+        .attr("class", "weather-btn")
+        .attr("data-weather", "rain")
+        .text("Rainy")
+        .on("click", function(){
+            d3.selectAll(".weather-btn").classed("selected", false);
+            const isSelected = ctx.SELECTED_WEATHER == 'Rain';
+            if(!isSelected){
+                d3.select(this).classed("selected", true);
+                ctx.SELECTED_WEATHER = 'Rain';
+            } else {
+                ctx.SELECTED_WEATHER = 'Any';
+            }
+            filterFish();
+        });
+}

@@ -9,33 +9,133 @@
     font-family: 'Stardew';
 }
 
-/* Map */
-#map {
-    max-height: 560px;
-    max-width: 919px; 
-    width: 60vw;
-    height: auto;
+*:focus,
+*:hover {
+    outline: none; /* Fix black outline on leaflet map when selecting polygon*/
 }
 
-/* Season wheel */
-#seasonWheel {
-    margin: 20px;
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    /* overflow: hidden; */
 }
+
+.main-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+    justify-content: space-between;
+    min-height: 911px;
+}
+
+.left-panel {
+    width: 250px;
+    height: 100%;
+    flex-shrink: 0;
+    display: flex;
+    overflow-y: auto;
+}
+
+.center-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+    max-width: 45%;
+}
+
+.righ-panel {
+    width: 400px;
+    flex-shrink: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+
+/* Map */
+#mapContainer {
+    height: 60%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#map {
+    width: auto;
+    height: 100%;
+    max-height: (100% - 20px);
+}
+
+.leaflet-interactive {
+    transition: fill-opacity 0.3s ease, stroke 0.3s ease;
+}
+
+/* Filters */
+.weather-selector {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+}
+
+.weather-btn {
+    padding: 10px;
+    width: 80px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    background: white;
+    font-size: 16px;
+}
+
+.weather-btn:hover {
+    background: #d8d8d8;
+}
+
+.weather-btn[data-weather="sun"].selected {
+    background: #ffe492;
+    border-color: #ffbf00;
+}
+
+.weather-btn[data-weather="rain"].selected {
+    background: #a0e7ff;
+    border-color: #32cbff;
+}
+
+#filters{
+    width: 100%;
+    height: calc(40% - 20px);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    justify-content: center;
+}
+
+
+#radarChart {
+    width: 100%;
+    height: 100%;
+}
+
 
 /* Style search/filter container*/
 .searchContainer{
-    position: absolute;
-    right: 0;
+    height: 100%;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    top: 0;
-    height: 100vh;
     box-sizing: border-box;
     overflow-y: auto;
-    max-width: 250px;
-    min-width: 130px;
-    margin: 10px;
     display: flex;
     flex-direction: column;
 }
@@ -114,7 +214,29 @@
     background-color: #e04848;
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    } to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    } to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    
+}
+
 #fishInfoOverlay {
+    animation: fadeIn 0.5s ease-out;
     position: fixed;
     top:0;
     left: 0;
@@ -127,9 +249,13 @@
     z-index: 100;
 }
 
+#fishInfoOverlay.fade-out {
+    animation: fadeOut 0.5s ease-out;
+}
+
 #fishInfo{
     background-color: white;
-    padding: 20px;
+    padding: 40px;
     width: 1000px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     position: relative;
