@@ -443,6 +443,23 @@ function addFishToList(){
         });
 }
 
+/**
+ * Function to check if a given hour is within a given range
+ * @param {*} hour the hour to check between 6 and 26
+ * @param {*} range array of string ranges ["xx:xx, xx:xx", ...]
+ * @returns Boolean
+ */
+function isInRange(hour, range){
+    if(!range) return false;
+
+
+    return range.some(timeRange => {
+        const [start, end] = timeRange.split(' - ').map(t => parseInt(t));
+        console.log(start, end);
+        newEnd = end > start ? end : end + 24;
+        return hour >= start && hour < newEnd;
+    });
+}
 
 /**
  * Filters the list of fish based on the selected time, season, area and weather
@@ -457,24 +474,10 @@ function filterFish(){
                 return selected ? d.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
             });
             const matchesWeather = d.weather.includes(ctx.SELECTED_WEATHER) || d.weather.includes("Any");
-            const matchesTime = ctx.SELECTED_TIME.every(selected => !selected) || // If no time is selected, return true
-                ctx.SELECTED_TIME.every((selected, hour) => {
-                    if(!selected) return true; // Skip unselected hours
-                    hour += 6; // Convert to game hours
-
-                    // Check if this hour is within any of the selected time ranges
-                    return d.times.some(time => {
-                        const [start, end] = time.split(' - ').map(t => parseInt(t));
-                        if(end > start) {
-                            return hour >= start && hour < end;
-                        } else {
-                            // Handle times that span midnight
-                            return hour >= start || hour < end;
-                        }
-                    })
-                    
+            
+            const matchesTime = ctx.SELECTED_TIME.every((selected, index) => {
+                    return !selected || isInRange(index + 6, d.times);
                 });
-                // return matchesWeather && matchesArea && matchesSeason? null : "none";
             return matchesArea && matchesSeason && matchesWeather && matchesTime ? null : "none";
         });
 }
@@ -564,19 +567,25 @@ function displayFishInfo(fish){
 
 
 
-function myFilter() {
+function FilterByName() {
     var input, filter, ul, li, a, i, txtValue;
     input = document.getElementById('fishSearch');
     filter = input.value.toUpperCase();
     ul = document.getElementById("fishList");
     li = ul.getElementsByTagName('li');
+
+    filterFish();
+
     for (i = 0; i < li.length; i++) {
         a = li[i];
         txtValue = a.textContent || a.innerText;
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            li[i].style.display = "";
-        } else {
-            li[i].style.display = "none";
+
+        if(a.style.display != "none"){
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                li[i].style.display = "";
+            } else {
+                li[i].style.display = "none";
+            }
         }
     }
 }
