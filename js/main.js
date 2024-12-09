@@ -457,19 +457,24 @@ function filterFish(){
                 return selected ? d.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
             });
             const matchesWeather = d.weather.includes(ctx.SELECTED_WEATHER) || d.weather.includes("Any");
-            const matchesTime = ctx.SELECTED_TIME == 0 ||
-                d.times.some(time => {
-                    const [start, end] = time.split(' - ').map(t => parseInt(t));
-                    return ctx.SELECTED_TIME.some(hour => {
-                        if(end > start){
-                            return hour >= start && hour <= end;
+            const matchesTime = ctx.SELECTED_TIME.every(selected => !selected) || // If no time is selected, return true
+                ctx.SELECTED_TIME.every((selected, hour) => {
+                    if(!selected) return true; // Skip unselected hours
+                    hour += 6; // Convert to game hours
+
+                    // Check if this hour is within any of the selected time ranges
+                    return d.times.some(time => {
+                        const [start, end] = time.split(' - ').map(t => parseInt(t));
+                        if(end > start) {
+                            return hour >= start && hour < end;
                         } else {
-                            // Time after midnight
-                            return hour >= start || hour <= end;
+                            // Handle times that span midnight
+                            return hour >= start || hour < end;
                         }
                     })
+                    
                 });
-                return matchesWeather && matchesArea && matchesSeason? null : "none";
+                // return matchesWeather && matchesArea && matchesSeason? null : "none";
             return matchesArea && matchesSeason && matchesWeather && matchesTime ? null : "none";
         });
 }
@@ -513,8 +518,6 @@ function displayFishInfo(fish){
 
     // Left section with fish name and image
     const leftSection = contentContainer.append("div").attr("class", "page-left")
-
-    console.log(fish.name);
 
     // Add Image and motif
     const imageContainer = leftSection.append("div").attr("id", "fishImageContainer");
