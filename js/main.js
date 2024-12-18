@@ -349,6 +349,7 @@ function loadData(){
         "data/fish_chances/Town_(Summer).csv",
         "data/fish_chances/Town_(Fall).csv",
         "data/fish_chances/Town_(Winter).csv",
+        
     ]
 
     let promises = files.map(url => d3.csv(url))

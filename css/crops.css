@@ -1,0 +1,154 @@
+@font-face {
+    font-family: 'Stardew';
+    src: url(../data/font/Stardew_Valley.ttf) format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    font-family: 'Stardew';
+}
+
+#chart{
+    margin: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h2 {
+    padding: 20px;
+}
+
+/* ####### */
+/* FILTERS */
+/* ####### */
+.filters{
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-around;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 400px;
+    margin: 10px
+}
+
+.filters label{
+    font-size: 20px;
+}
+
+.filters .day-input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.filters .season-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-left: 20px;
+}
+
+
+/* .season-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 0 auto;
+} */
+
+.season-button {
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: center;
+    width: 75px;
+    background-color: aqua;
+    border-radius: 25px;
+}
+
+.season-button[data-season="Spring"]{
+    background-color: #c4ffc4;
+}
+
+.season-button[data-season="Summer"] {
+    background-color: #faeda4;
+}
+
+.season-button[data-season="Fall"] {
+    background-color: #fccd93;
+}
+
+.season-button[data-season="Winter"] {
+    background-color: #96c8fa;
+}
+
+.season-button[data-season="Spring"]:hover{
+    background-color: #77e777;
+}
+.season-button[data-season="Summer"]:hover{
+    background-color: #FFD700;
+}
+.season-button[data-season="Fall"]:hover{
+    background-color: #FF8C00;
+}
+.season-button[data-season="Winter"]:hover{
+    background-color: #1E90FF;
+}
+
+.season-button[data-season="Spring"].selected{
+    background-color: #39c539;
+    color: white;
+}
+.season-button[data-season="Summer"].selected{
+    background-color: #dfbe07;
+    color: white;
+}
+.season-button[data-season="Fall"].selected{
+    background-color: #c7740f;
+    color: white;
+}
+.season-button[data-season="Winter"].selected{
+    background-color: #1973ce;
+    color: white;
+}
+
+
+
+/* Switch */
+/* .switch {
+    display: inline-block;
+    position: relative;
+    width: 50px;
+    height: 25px;
+    border-radius: 20px;
+    background: #dfd9ea;
+    transition: background 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    vertical-align: middle;
+    cursor: pointer;
+}
+.switch::before {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    background: #fafafa;
+    border-radius: 50%;
+    transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.switch:active::before {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.28), 0 0 0 20px rgba(128,128,128,0.1);
+}
+input:checked + .switch {
+    background: steelblue;
+}
+input:checked + .switch::before {
+    left: 27px;
+    background: #fff;
+}
+input:checked + .switch:active::before {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.28), 0 0 0 20px rgba(0,150,136,0.2);
+} */

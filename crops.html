@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="js/d3.v7.min.js"></script>
+    <script type="text/javascript" src="js/crops.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/crops.css">
+    <link rel="stylesheet" type="text/css" href="css/nav.css">
+    <title>Crops</title>
+</head>
+<header>
+    <ul>
+        <li><a href="index.html">Fish</a></li>
+        <li><a href="recepies.html">Recipes</a></li>
+        <li><a href="crops.html">Crops</a></li>
+        <li style="float:right"><a class="active" href="#home">Home</a></li>
+    </ul>
+</header>
+<body onload="createVizCrops()">
+    <div class="top-container">
+        <div class="filters">
+            <!-- button to switch between visualisation -->
+            <!-- When activated, remove Day selector, put season selector -->
+
+            <!-- <input type="checkbox" hidden="hidden" id="visualisation"> -->
+            <!-- <label class="switch" for="visualisation"></label> -->
+
+            <div class="day-input-container">
+                <label for="dayFilter">Day <span id="dayValue">1</span></label>
+                    <!-- <input type="range" class="c-rng" min="0" max="112" step="1" value="0" data-range="circular"> -->
+                    <input type="range" min="1" max="28" step="1" value="1" id="dayFilter" oninput="updateDayValue(this.value)">
+            </div>
+
+            <div class="season-buttons">
+                <div class="season-button selected" data-season="Spring">Spring</div>
+                <div class="season-button" data-season="Summer">Summer</div>
+                <div class="season-button" data-season="Fall">Fall</div>
+                <div class="season-button" data-season="Winter">Winter</div>
+            </div>
+        </div>
+    </div>
+        
+
+    <div id="chart">
+        <h2>Earnings from planting crops on day 1</h2>
+    </div>
+
+    
+    <!-- <script>
+        // Initialize the circular slider
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('[data-range="circular"]');
+            elements.forEach(element => {
+                const slider = new RangeSlider(element, element.dataset);
+                element.addEventListener('input', function() {
+                    console.log("ok");
+                    updateDayValue(this.value);
+                });
+            });
+        });
+    </script> -->
+</body>
+</html>
