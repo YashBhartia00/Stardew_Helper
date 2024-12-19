@@ -320,8 +320,8 @@ function createViz(){
     mapInit();
     loadData();
     timeWheel();
-    createWeatherSelector();
-    // handleWeatherSelection();
+    // createWeatherSelector();
+    handleWeatherSelection();
     document.getElementById("reset").addEventListener("click", function(){
         ctx.SELECTED_AREAS = [];
         setPolygons();
@@ -505,17 +505,22 @@ function isFishMatch(fish){
 /**
  * Filters the list of fish based on the selected time, season, area and weather
  */
-function filterFish(){
+function filterFish(searchTerm=""){
     const container = d3.select("#fishList");
 
     const filteredData = ctx.FISH_DATA.filter(isFishMatch);
-    
-    const filteredFishNames = filteredData.map(fish => fish.name);
+
+    const finalFilteredData = searchTerm ? filteredData.filter(fish => fish.name.toLowerCase().includes(searchTerm.toLowerCase())) : filteredData;
+
+
+    const filteredFishNames = finalFilteredData.map(fish => fish.name);
 
     container.selectAll("li")
         .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
 
-        updateXPDifficultyScatter(filteredData);
+    updateXPDifficultyScatter(filteredData);
+
+
 }
 
 
@@ -603,26 +608,9 @@ function displayFishInfo(fish){
  * Filters the fish list based on the search input
  */
 function FilterByName() {
-    var input, filter, ul, li, a, i, txtValue;
-    input = document.getElementById('fishSearch');
-    filter = input.value.toUpperCase();
-    ul = document.getElementById("fishList");
-    li = ul.getElementsByTagName('li');
-
-    filterFish();
-
-    for (i = 0; i < li.length; i++) {
-        a = li[i];
-        txtValue = a.textContent || a.innerText;
-
-        if(a.style.display != "none"){
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                li[i].style.display = "";
-            } else {
-                li[i].style.display = "none";
-            }
-        }
-    }
+    const input = document.getElementById("fishSearch");
+    const searchTerm = input.value;
+    filterFish(searchTerm);
 }
 
 /**
@@ -994,45 +982,45 @@ function handleWeatherSelection(){
 /**
  * Creates a selector for the weather
  */
-function createWeatherSelector() {
-    ctx.SELECTED_WEATHER = null;
+// function createWeatherSelector() {
+//     ctx.SELECTED_WEATHER = null;
 
-    const weatherDiv = d3.select("#filters")
-        .append("div")
-        .attr("class", "weather-selector");
+//     const weatherDiv = d3.select("#filters")
+//         .append("div")
+//         .attr("class", "weather-selector");
 
-    weatherDiv.append("button")
-        .attr("class", "weather-btn")
-        .attr("data-weather", "sun")
-        .text("Sunny")
-        .on("click", function(){
-            d3.selectAll(".weather-btn").classed("selected", false);
-            const isSelected = ctx.SELECTED_WEATHER == 'Sun';
-            if(!isSelected){
-                d3.select(this).classed("selected", true);
-                ctx.SELECTED_WEATHER = 'Sun';
-            } else {
-                ctx.SELECTED_WEATHER = 'Any';
-            }
-            filterFish();
-        });
+//     weatherDiv.append("button")
+//         .attr("class", "weather-btn")
+//         .attr("data-weather", "sun")
+//         .text("Sunny")
+//         .on("click", function(){
+//             d3.selectAll(".weather-btn").classed("selected", false);
+//             const isSelected = ctx.SELECTED_WEATHER == 'Sun';
+//             if(!isSelected){
+//                 d3.select(this).classed("selected", true);
+//                 ctx.SELECTED_WEATHER = 'Sun';
+//             } else {
+//                 ctx.SELECTED_WEATHER = 'Any';
+//             }
+//             filterFish();
+//         });
     
-    weatherDiv.append("button")
-        .attr("class", "weather-btn")
-        .attr("data-weather", "rain")
-        .text("Rainy")
-        .on("click", function(){
-            d3.selectAll(".weather-btn").classed("selected", false);
-            const isSelected = ctx.SELECTED_WEATHER == 'Rain';
-            if(!isSelected){
-                d3.select(this).classed("selected", true);
-                ctx.SELECTED_WEATHER = 'Rain';
-            } else {
-                ctx.SELECTED_WEATHER = 'Any';
-            }
-            filterFish();
-        });
-}
+//     weatherDiv.append("button")
+//         .attr("class", "weather-btn")
+//         .attr("data-weather", "rain")
+//         .text("Rainy")
+//         .on("click", function(){
+//             d3.selectAll(".weather-btn").classed("selected", false);
+//             const isSelected = ctx.SELECTED_WEATHER == 'Rain';
+//             if(!isSelected){
+//                 d3.select(this).classed("selected", true);
+//                 ctx.SELECTED_WEATHER = 'Rain';
+//             } else {
+//                 ctx.SELECTED_WEATHER = 'Any';
+//             }
+//             filterFish();
+//         });
+// }
 
 function createXPDifficultyScatter(data){
     const margin = {top: 10, right: 30, bottom: 30, left: 60},
