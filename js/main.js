@@ -464,6 +464,7 @@ function processFishData(data){
  */
 function addFishToList(){
     const container = d3.select("#fishList");
+    let data = ctx.FISH_DATA.sort((a, b) => a.name.localeCompare(b.name));
     container.selectAll("li")
         .data(ctx.FISH_DATA)
         .enter()
@@ -488,9 +489,6 @@ function addFishToList(){
 
 function highlightFishingZones(locations){
     locations.forEach(location => {
-        console.log(location);
-        console.log(polygons);
-        console.log(`area${location.replace(/_/g, '')}`);
         const polygon = polygons[`area${location.replace(/_/g, '')}`];
         if(polygon){
             polygon.setStyle({
@@ -502,9 +500,6 @@ function highlightFishingZones(locations){
 
 function unhighlightFishingZones(locations){
     locations.forEach(location => {
-        console.log(location);
-        console.log(polygons);
-        console.log(`area${location.replace(/_/g, '')}`);
         const polygon = polygons[`area${location.replace(/_/g, '')}`];
         if(polygon){
             polygon.setStyle({
@@ -625,9 +620,9 @@ function displayFishInfo(fish){
     const tbody = table.append("tbody");
 
     const info = [
-        { label: "Location", value: fish.location },
+        { label: "Location", value: fish.location.map(l => l.replace(/_/g, " ")).join(", ") },
         { label: "Time", value: fish.times },
-        { label: "Season", value: fish.seasons },
+        { label: "Season", value: fish.seasons.join(", ") },
         { label: "Weather", value: fish.weather },
         { label: "Base XP", value: fish.baseXP }
     ]
@@ -639,7 +634,7 @@ function displayFishInfo(fish){
         row.append("td").text(i.value);
     });
 
-    // Add price breakdown in grouped bar chart, price depending on quality. different bars represent profession
+    // // Add price breakdown in grouped bar chart, price depending on quality. different bars represent profession
     // const priceBreakdown = rightSection.append("div")
     //     .attr("id", "priceBreakdown");
     // priceBarChart("#priceBreakdown", fish.Name);
@@ -1126,7 +1121,6 @@ function createXPDifficultyScatter(data){
                 .text(d => d.name + ": " + d.baseXP + " XP");
 
     d3.select("#toggleFish").on("click", function(){
-        console.log("test",dots, images);
         const isDotVisible = dots.style("display") != "none";
         dots.style("display", isDotVisible ? "none" : null);
         images.style("display", isDotVisible ? null : "none");
