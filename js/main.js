@@ -11,7 +11,7 @@ const ctx = {
 }
 
 // TODO: when reset filter, change color of time wheel back to default
-// Fix issue when reseting with the updating of the scatterplot
+// Fix issue when reseting with the updating of the scatterplot, for now, create scatter each time
 
 let map, imageOverlay
 const polygons = {}
@@ -317,11 +317,13 @@ function mapInit(){
 function createViz(){
     ctx.SELECTED_TIME = new Array(21).fill(false);
     ctx.SELECTED_SEASON = new Array(4).fill(false);
+    ctx.SELECTED_WEATHER = "Any";
+    ctx.SELECTED_AREAS = []
     mapInit();
     loadData();
     timeWheel();
-    // createWeatherSelector();
     handleWeatherSelection();
+    
     document.getElementById("reset").addEventListener("click", function(){
         ctx.SELECTED_AREAS = [];
         setPolygons();
@@ -329,6 +331,7 @@ function createViz(){
         ctx.SELECTED_SEASON = new Array(4).fill(false);
         ctx.SELECTED_WEATHER = "Any";
         d3.selectAll(".weather-btn").classed("selected", false);
+        document.getElementById("fishSearch").value = "";
         filterFish();
     });
 }
@@ -518,7 +521,7 @@ function filterFish(searchTerm=""){
     container.selectAll("li")
         .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
 
-    updateXPDifficultyScatter(filteredData);
+    createXPDifficultyScatter(finalFilteredData);
 
 
 }
@@ -1122,7 +1125,6 @@ function updateXPDifficultyScatter(data){
         .transition(trans)
         .attr("r", 2)
         
-
     circles.transition(trans)
         .attr("cx", d =>  x(d.difficulty))
         .attr("cy", d => y(d.baseXP) )
