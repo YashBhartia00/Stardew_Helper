@@ -145,7 +145,10 @@ function updateChart(){
     svg.select(".x-axis")
         .transition(trans)
         .attr("transform", "translate(0," + y(0) + ")")
-        .call(d3.axisBottom(x));
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+            .attr("transform", "translate(-13,10)rotate(-90)")
+            .style("text-anchor", "end")
 
     svg.select(".y-axis")
         .transition(trans)
@@ -163,6 +166,7 @@ function updateChart(){
         .attr("height", 0)
         .attr("width", x.bandwidth())
         .attr("fill", "#90EE90")
+        .call(enter => enter.append("title").text(d => d.value + "g"))
         .merge(posBars)
         .transition(trans)
         .attr("x", d => x(d.crop))
@@ -188,6 +192,7 @@ function updateChart(){
         .attr("height", 0)
         .attr("width", x.bandwidth())
         .attr("fill", "#FF7F7F")
+        .call(enter => enter.append("title").text(d => d.value + "g"))
         .merge(negBars)
         .transition(trans)
         .attr("x", d => x(d.crop))
@@ -291,7 +296,6 @@ function createChart(){
  * @description Creates a ranking slop chart
  */
 function createRankingChart(){
-    // Dict: key is day, value is dict with crop and profit
     let profit = {};
     let season = ctx.selected_season; 
     let crops = ctx.crops;
@@ -314,8 +318,6 @@ function createRankingChart(){
         profit[day].sort((a, b) => b.value - a.value);
     })
 
-    let minProfit = d3.min(Object.keys(profit).map(d => d3.min(profit[d], p => p.value)));
-    let maxProfit = d3.max(Object.keys(profit).map(d => d3.max(profit[d], p => p.value)));
 
     let margin = {top: 30, right: 30, bottom: 70, left: 60}
     width = ctx.W - margin.left - margin.right,
@@ -368,6 +370,12 @@ function createRankingChart(){
         .attr("opacity", 1)
         .call(d3.axisLeft(display));
 
+
+    // Maximum of 17 crops
+    let colorLine = d3.scaleOrdinal()
+        .domain(crops.map(c => c.crop))
+        .range(["#393b79","#5254a3","#6b6ecf","#9c9ede","#637939","#8ca252","#b5cf6b","#cedb9c","#8c6d31","#bd9e39","#e7ba52","#e7cb94","#843c39","#ad494a","#d6616b","#e7969c","#7b4173","#a55194","#ce6dbd","#de9ed6"]);
+    
     let line = d3.line()
         .x(d => x(d.day))
         .y(d => y(crops[d.rank].crop));
@@ -379,7 +387,7 @@ function createRankingChart(){
         .append("path")
             .attr("class", "line")
             .attr("fill", "none")
-            .attr("stroke", "grey")
+            .attr("stroke", crop => colorLine(crop.crop))
             .attr("stroke-width", 1.5)
             .attr("d", crop => {
                 let lineData = days.map(day => {
@@ -405,6 +413,7 @@ function createRankingChart(){
             .attr("stroke-dashoffset", 0);
     });
 
+
     // Add circles and images for each crop
     crops.forEach(crop => {
         let lineData = days.map(day => {
@@ -425,7 +434,7 @@ function createRankingChart(){
             .attr("cx", d => x(d.day))
             .attr("cy", d => y(crops[d.rank].crop))
             .attr("r", 5)
-            .attr("fill", "white");
+            .attr("fill", "white")
 
         points.append("image")
             .attr("class", "crop-image-" + crop.crop)
