@@ -332,6 +332,10 @@ function createViz(){
         ctx.SELECTED_WEATHER = "Any";
         d3.selectAll(".weather-btn").classed("selected", false);
         document.getElementById("fishSearch").value = "";
+
+        d3.selectAll("path.season").style("opacity", 0.3);
+        d3.selectAll("path.time").style("opacity", 0.3);
+
         filterFish();
     });
 }
@@ -860,7 +864,7 @@ function timeWheel(){
             .attr("fill", d => colorSeason(d.data.key))
             .attr("stroke", "white")
             .style("stroke-width", "2px")
-            .style("opacity", 0.5)
+            .style("opacity", 0.3)
             .on("mouseover", function(){
                 d3.select(this).style("opacity", 1);
             })
@@ -868,7 +872,7 @@ function timeWheel(){
                 const season = d3.select(this).data()[0].data.key;
                 const index = seasons.indexOf(season);
                 if(!ctx.SELECTED_SEASON[index]){
-                    d3.select(this).style("opacity", 0.7);
+                    d3.select(this).style("opacity", 0.3);
                 }
             })
             .on("click", function(){
@@ -888,10 +892,10 @@ function timeWheel(){
         .append("path")
             .attr("class", "time")
             .attr("d", outerArc)
-            .attr("fill", "#73C2FB")
+            .attr("fill", "#bebebe")
             .attr("stroke", "white")
             .style("stroke-width", "2px")
-            .style("opacity", 0.7)
+            .style("opacity", 0.3)
             .on("mouseover", function(){
                 d3.select(this).style("opacity", 1);
             })
@@ -899,7 +903,7 @@ function timeWheel(){
                 const time = d3.select(this).data()[0].data.key;
                 const index = times.indexOf(time);
                 if(!ctx.SELECTED_TIME[index]){
-                    d3.select(this).style("opacity", 0.7);
+                    d3.select(this).style("opacity", 0.3);
                 }
             })
             .on("click", function(){
