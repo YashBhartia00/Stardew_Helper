@@ -8,10 +8,19 @@
     <script type="text/javascript" src="js/radar.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/nav.css">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
+<header>
+    <ul class="nav">
+        <li class="nav"><a href="index.html">Fish</a></li>
+        <li class="nav"><a href="recepies.html">Recipes</a></li>
+        <li class="nav"><a href="crops.html">Crops</a></li>
+        <li class="nav" style="float:right"><a class="active" href="#home">Home</a></li>
+    </ul>
+</header>
 <body onload ="createViz()">
     <div class="main-container">
         <div class="left-panel">
@@ -27,14 +36,14 @@
             <div id="mapContainer">
                 <div id="map"></div>
             </div>
-            <div id="filters">
-                <!-- <h1>Filters</h1> -->
-                <div id="seasonWheel"></div>
-            </div>
         </div>
     
         <div class="right-panel">
-            <div id="radarChart"></div>
+            <!-- <div id="radarChart"></div> -->
+            <div id="filters">
+                <h2>Filters</h2>
+                <div id="seasonWheel"></div>
+            </div>
         </div>
     </div>
 

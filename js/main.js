@@ -770,7 +770,7 @@ function seasonWheel(){
  */
 function timeWheel(){
     const seasons = ["Spring", "Summer", "Fall", "Winter"];
-    const times = d3.range(6, 27).map(hour => `${hour % 24}:00`);
+    const times = d3.range(6, 26).map(hour => `${hour % 24}:00`);
 
     const size = 300;
     const radius = size / 2;
@@ -838,7 +838,7 @@ function timeWheel(){
         .append("path")
             .attr("class", "time")
             .attr("d", outerArc)
-            .attr("fill", "grey")
+            .attr("fill", "#73C2FB")
             .attr("stroke", "white")
             .style("stroke-width", "2px")
             .style("opacity", 0.7)

@@ -10,11 +10,11 @@
     <title>Crops</title>
 </head>
 <header>
-    <ul>
-        <li><a href="index.html">Fish</a></li>
-        <li><a href="recepies.html">Recipes</a></li>
-        <li><a href="crops.html">Crops</a></li>
-        <li style="float:right"><a class="active" href="#home">Home</a></li>
+    <ul class="nav">
+        <li class="nav"><a href="index.html">Fish</a></li>
+        <li class="nav"><a href="recepies.html">Recipes</a></li>
+        <li class="nav"><a href="crops.html">Crops</a></li>
+        <li class="nav" style="float:right"><a class="active" href="#home">Home</a></li>
     </ul>
 </header>
 <body onload="createVizCrops()">
@@ -29,7 +29,7 @@
             <div class="day-input-container">
                 <label for="dayFilter">Day <span id="dayValue">1</span></label>
                     <!-- <input type="range" class="c-rng" min="0" max="112" step="1" value="0" data-range="circular"> -->
-                    <input type="range" min="1" max="28" step="1" value="1" id="dayFilter" oninput="updateDayValue(this.value)">
+                    <input type="range" min="1" max="28" step="1" value="1" id="dayFilter" oninput="updateChartText()">
             </div>
 
             <div class="season-buttons">
@@ -39,26 +39,15 @@
                 <div class="season-button" data-season="Winter">Winter</div>
             </div>
         </div>
+
+        <div class="switch-viz">
+            Switch to ranking visualisation
+            <div class="switch-viz-button"> Switch</div>
+        </div>
     </div>
         
-
     <div id="chart">
-        <h2>Earnings from planting crops on day 1</h2>
+        <h2>Profit from planting crops on day 1 of Spring</h2>
     </div>
-
-    
-    <!-- <script>
-        // Initialize the circular slider
-        document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll('[data-range="circular"]');
-            elements.forEach(element => {
-                const slider = new RangeSlider(element, element.dataset);
-                element.addEventListener('input', function() {
-                    console.log("ok");
-                    updateDayValue(this.value);
-                });
-            });
-        });
-    </script> -->
 </body>
 </html>
