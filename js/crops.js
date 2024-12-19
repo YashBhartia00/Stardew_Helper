@@ -7,9 +7,6 @@ const ctx = {
     switchChart: false
 }
 
-// ! \\ TODO: if ranking selected, change the title to "Ranking of crops on season X" and remove the day filter
-// Also, modify y axis in ranking chart so that it display 1st, 2nd, 3rd, 4th ... instead of 1,2,3,4..
-// Add a rankingChartUpdate function that updates the ranking chart when a new season is selected with animation on multiple season crops
 
 function createVizCrops(){
     loadCrops();
@@ -33,9 +30,13 @@ function switchChart(){
     ctx.switchChart = !ctx.switchChart;
     d3.select("#chart").select("svg").remove();
     if(ctx.switchChart){
+        document.getElementsByClassName('switch-viz-text')[0].innerText = "Switch to profit per day visualisation";
         d3.select("#chart h2").text("Ranking of crops on " + ctx.selected_season);
+        document.getElementById("day").style.display = "none";
         createRankingChart();
     }else{
+        document.getElementsByClassName('switch-viz-text')[0].innerText = "Switch to Ranking visualization";
+        document.getElementById("day").style.display = "flex";
         d3.select("#chart h2").text("Profit from planting crops on day "+ document.getElementById("dayFilter").value +" of " + ctx.selected_season);
         createChart();
     }
@@ -81,10 +82,6 @@ function getNextSeason(curr_season){
 }
 
 function computeProfit(crop, current_day){
-    // ! \\ todo : handle crops that give multiple crops per harvest
-    // Handle crops growing in multiple seasons
-    // let current_day = parseInt(document.getElementById("dayValue").innerText);
-    // min gold per day = (max harvest * price - seed price)/growth time 
     let current_season = ctx.selected_season; 
     let price = 0;
     let harvest_seasons = crop.season;
@@ -97,7 +94,6 @@ function computeProfit(crop, current_day){
         next_season = getNextSeason(next_season);
         cpt++;
     }
-
 
     if(current_day - 1 + crop.growthTime <= deadline){
         price = crop.price;
@@ -326,7 +322,11 @@ function createRankingChart(){
     height = ctx.H - margin.top - margin.bottom;
 
     let days = Array.from({length: 28}, (v, i) => i + 1);
-    let ranking = Array.from({length: crops.length}, (v, i) => i+1);
+    let ranking = Array.from({length: crops.length}, (v, i) => {
+        if(i == 0) return "1st";
+        if(i == 1) return "2nd";
+        return i+1 + "th"
+    });
 
 
     const x = d3.scalePoint()

@@ -26,7 +26,7 @@
             <!-- <input type="checkbox" hidden="hidden" id="visualisation"> -->
             <!-- <label class="switch" for="visualisation"></label> -->
 
-            <div class="day-input-container">
+            <div class="day-input-container" id="day">
                 <label for="dayFilter">Day <span id="dayValue">1</span></label>
                     <!-- <input type="range" class="c-rng" min="0" max="112" step="1" value="0" data-range="circular"> -->
                     <input type="range" min="1" max="28" step="1" value="1" id="dayFilter" oninput="updateChartText()">
@@ -41,7 +41,7 @@
         </div>
 
         <div class="switch-viz">
-            Switch to ranking visualisation
+            <p class="switch-viz-text">Switch to ranking visualisation</p>
             <div class="switch-viz-button"> Switch</div>
         </div>
     </div>

@@ -10,6 +10,9 @@ const ctx = {
     SELECTED_AREAS: []
 }
 
+// TODO: when reset filter, change color of time wheel back to default
+// Fix issue when reseting with the updating of the scatterplot
+
 let map, imageOverlay
 const polygons = {}
 
@@ -318,8 +321,19 @@ function createViz(){
     loadData();
     timeWheel();
     createWeatherSelector();
-
+    // handleWeatherSelection();
+    document.getElementById("reset").addEventListener("click", function(){
+        ctx.SELECTED_AREAS = [];
+        setPolygons();
+        ctx.SELECTED_TIME = new Array(21).fill(false);
+        ctx.SELECTED_SEASON = new Array(4).fill(false);
+        ctx.SELECTED_WEATHER = "Any";
+        d3.selectAll(".weather-btn").classed("selected", false);
+        filterFish();
+    });
 }
+
+
 
 /**
  * Loads the data from the csv files
@@ -365,6 +379,7 @@ function loadData(){
             ctx.fish_chances[files[i]] = data[i];
         }
         fishAveragePricePerTime();
+        createXPDifficultyScatter(ctx.FISH_DATA);
     })
 }
 
@@ -432,7 +447,8 @@ function processFishData(data){
             weather: fish.Weather.split('\n').map(w => w.trim()),
             location: location,
             description: fish.Description,
-            baseXP: fish.BaseXP,
+            baseXP: parseInt(fish.BaseXP),
+            difficulty: parseInt(fish.Difficulty.split(' ')[0])
         }
     });
 
@@ -467,10 +483,23 @@ function isInRange(hour, range){
 
     return range.some(timeRange => {
         const [start, end] = timeRange.split(' - ').map(t => parseInt(t));
-        console.log(start, end);
         newEnd = end > start ? end : end + 24;
         return hour >= start && hour < newEnd;
     });
+}
+
+
+function isFishMatch(fish){
+    const seasons = ["Spring", "Summer", "Fall", "Winter"];
+    const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
+    const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
+        return selected ? fish.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
+    });
+    const matchesWeather = fish.weather.includes(ctx.SELECTED_WEATHER) || fish.weather.includes("Any")  || ctx.SELECTED_WEATHER == "Any";
+    const matchesTime = ctx.SELECTED_TIME.every((selected, index) => {
+        return !selected || isInRange(index + 6, fish.times);
+    });
+    return matchesArea && matchesSeason && matchesWeather && matchesTime;
 }
 
 /**
@@ -478,20 +507,15 @@ function isInRange(hour, range){
  */
 function filterFish(){
     const container = d3.select("#fishList");
+
+    const filteredData = ctx.FISH_DATA.filter(isFishMatch);
+    
+    const filteredFishNames = filteredData.map(fish => fish.name);
+
     container.selectAll("li")
-        .style("display", function(d) {
-            const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => d.location.includes(area)) : true;
-            // Season is a boolean array, if any season is selected, it should match
-            const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
-                return selected ? d.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
-            });
-            const matchesWeather = d.weather.includes(ctx.SELECTED_WEATHER) || d.weather.includes("Any");
-            
-            const matchesTime = ctx.SELECTED_TIME.every((selected, index) => {
-                    return !selected || isInRange(index + 6, d.times);
-                });
-            return matchesArea && matchesSeason && matchesWeather && matchesTime ? null : "none";
-        });
+        .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
+
+        updateXPDifficultyScatter(filteredData);
 }
 
 
@@ -535,8 +559,8 @@ function displayFishInfo(fish){
     const imageContainer = leftSection.append("div").attr("id", "fishImageContainer");
     imageContainer.append("img")
         .attr("src", `data/images/fish/${fish.name.replace(/ /g, "_")}.png`);
-    imageContainer.append("div")
-        .attr("id", "fishMinigame");
+    // imageContainer.append("div")
+    //     .attr("id", "fishMinigame");
 
 
     // Set fish description
@@ -953,6 +977,20 @@ function fishAveragePricePerTime(){
     RadarChart("#radarChart", data, config);
 }
 
+function handleWeatherSelection(){
+    d3.selectAll(".weather-btn").on("click", function(){
+        const selectedWeather = d3.select(this).attr("data-weather");
+        if(ctx.SELECTED_WEATHER == selectedWeather){
+            ctx.SELECTED_WEATHER = "Any";
+            d3.select(this).classed("selected", false);
+        } else {
+            ctx.SELECTED_WEATHER = selectedWeather;
+            d3.selectAll(".weather-btn").classed("selected", false);
+            d3.select(this).classed("selected", true);
+        }
+        filterFish();
+    });
+}
 /**
  * Creates a selector for the weather
  */
@@ -994,4 +1032,120 @@ function createWeatherSelector() {
             }
             filterFish();
         });
+}
+
+function createXPDifficultyScatter(data){
+    const margin = {top: 10, right: 30, bottom: 30, left: 60},
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    d3.select("#scatterplot").select("svg").remove();
+    // append the svg object to the body of the page
+    const svg = d3.select("#scatterplot")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Add X axis
+    const x = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.difficulty) + 5])
+    .range([ 0, width ]);
+
+    svg.append("g")
+    .attr("class", "x-axis")
+    .attr("transform", `translate(0, ${height})`)
+    .call(d3.axisBottom(x));
+
+    // Add Y axis
+    const y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.baseXP) + 5])
+    .range([ height, 0]);
+
+    svg.append("g")
+    .attr("class", "y-axis")
+    .call(d3.axisLeft(y));
+
+    // Add dots
+    svg.append('g')
+    .selectAll("dot")
+    .data(data)
+    .join("circle")
+        .attr("class", d => "dot-" + d.name)
+        .attr("cx", d =>  x(d.difficulty))
+        .attr("cy", d => y(d.baseXP) )
+        .attr("r", 2)
+        .style("fill", "#69b3a2")
+        .append("title")
+            .text(d => d.name + ": " + d.baseXP + " XP");
+
+    // // Add images
+    // svg.append('g')
+    //     .selectAll("image")
+    //     .data(data)
+    //     .join("image")
+    //         .attr("xlink:href", d => `data/images/fish/${d.name.replace(/ /g, "_")}.png`)
+    //         .attr("x", d => x(d.difficulty) - 7.5)
+    //         .attr("y", d => y(d.baseXP) - 7.5)
+    //         .attr("width", 15)
+    //         .attr("height", 15)
+    //         .append("title")
+    //             .text(d => d.name + ": " + d.baseXP + " XP");
+}
+
+
+function updateXPDifficultyScatter(data){
+    const margin = {top: 10, right: 30, bottom: 30, left: 60},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+    const svg = d3.select("#scatterplot").select("svg").select("g");
+
+    let trans = d3.transition().duration(750);
+    // Axis
+    const x = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.difficulty) + 5])
+    .range([ 0, width ]);
+
+    const y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.baseXP) + 5])
+    .range([ height, 0]);
+
+    svg.select(".x-axis")
+        .transition(trans)
+        .attr("transform", `translate(0, ${height})`)
+        .call(d3.axisBottom(x));
+
+    svg.select(".y-axis")
+        .transition(trans)
+        .call(d3.axisLeft(y));
+
+    let circles = svg.selectAll("circle")
+        .data(data, d => d.name);
+
+    circles.enter()
+        .append("circle")
+        .attr("class", d => "dot-" + d.name)
+        .attr("cx", d =>  x(d.difficulty))
+        .attr("cy", d => y(d.baseXP) )
+        .attr("r", 0)
+        .style("fill", "#69b3a2")
+        .transition(trans)
+        .attr("r", 2)
+        
+
+    circles.transition(trans)
+        .attr("cx", d =>  x(d.difficulty))
+        .attr("cy", d => y(d.baseXP) )
+        .attr("r", 2)
+        .style("fill", "#69b3a2")
+
+    circles.exit()
+        .transition(trans)
+        .attr("r", 0)
+        .remove();
+
+    circles.append("title")
+        .text(d => d.name + ": " + d.baseXP + " XP");
 }
