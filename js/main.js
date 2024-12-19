@@ -185,13 +185,13 @@ function setPolygons(){
     ]
 
     const areas = {
-        areaSea: areaSeaRelative,
-        areaLake: areaLakeRelative,
-        areaTownRiver: areaTownRiverRelative,
+        areaOcean: areaSeaRelative,
+        areaMountainLake: areaLakeRelative,
+        areaRiverTown: areaTownRiverRelative,
         areaForestRiver: areaForestRiverRelative,
-        areaPond: areaPondRelative,
-        areaDesert: areaDesertRelative,
-        areaSecretWoods: areaSecretWoodsRelative
+        areaForestPond: areaPondRelative,
+        areaTheDesert: areaDesertRelative,
+        areaSecretWoodsPond: areaSecretWoodsRelative
     };
 
     // Remove existing polygons if they exist
@@ -205,13 +205,13 @@ function setPolygons(){
     Object.keys(areas).forEach(key => {
         const absoluteCoords = convertRelativeToAbsolute(areas[key]);
         let locationKey;
-        if(key === "areaSea") locationKey = "Ocean";
-        else if(key === "areaLake") locationKey = "Mountain_Lake";
-        else if(key === "areaTownRiver") locationKey = "River_Town";
+        if(key === "areaOcean") locationKey = "Ocean";
+        else if(key === "areaMountainLake") locationKey = "Mountain_Lake";
+        else if(key === "areaRiverTown") locationKey = "River_Town";
         else if(key === "areaForestRiver") locationKey = "River_Forest";
-        else if(key === "areaPond") locationKey = "Forest_Pond";
-        else if(key === "areaDesert") locationKey = "The_Desert";
-        else if(key === "areaSecretWoods") locationKey = "Secret_Woods_Pond";
+        else if(key === "areaForestPond") locationKey = "Forest_Pond";
+        else if(key === "areaTheDesert") locationKey = "The_Desert";
+        else if(key === "areaSecretWoodsPond") locationKey = "Secret_Woods_Pond";
         polygons[key] = L.polygon(absoluteCoords, {
             color: 'white',
             fillColor: 'white',
@@ -475,10 +475,43 @@ function addFishToList(){
             li.append("span")
                 .text(d.name);
         })
-        // .text(d => d.name)
         .on("click", function(event, fish){
             displayFishInfo(fish);
+        })
+        .on("mouseover", function(event, fish){
+            highlightFishingZones(fish.location);
+        })
+        .on("mouseout", function(event, fish){
+            unhighlightFishingZones(fish.location);
         });
+}
+
+function highlightFishingZones(locations){
+    locations.forEach(location => {
+        console.log(location);
+        console.log(polygons);
+        console.log(`area${location.replace(/_/g, '')}`);
+        const polygon = polygons[`area${location.replace(/_/g, '')}`];
+        if(polygon){
+            polygon.setStyle({
+                color: "red"
+            });
+        }
+    });
+}
+
+function unhighlightFishingZones(locations){
+    locations.forEach(location => {
+        console.log(location);
+        console.log(polygons);
+        console.log(`area${location.replace(/_/g, '')}`);
+        const polygon = polygons[`area${location.replace(/_/g, '')}`];
+        if(polygon){
+            polygon.setStyle({
+                color: "white"
+            });
+        }
+    });
 }
 
 /**

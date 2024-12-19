@@ -138,6 +138,11 @@ html, body {
     height: 100%;
 }
 
+#filters p {
+    font-size: 25px;
+    margin-top: 0;
+}
+
 
 #radarChart {
     width: 100%;
