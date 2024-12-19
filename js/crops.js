@@ -82,6 +82,12 @@ function getNextSeason(curr_season){
 }
 
 function computeProfit(crop, current_day){
+    // The general formula is: Minimum Gold per Day = ((Max Harvests × Sell Price per Harvest) − Seed Price) / Growing Days
+    // Growing Days = Days to Maturity + ((Max Harvests − 1) × Days to Regrow)
+    // Days to Maturity and Days to Regrow are listed in each table.
+    // Max Harvests is normally 1, but for crops that continue to produce, it is the actual number of harvests that can be obtained in the growing season(s).
+    // Sell Price per Harvest is normally the same as the Sell Price of one normal-quality crop. Extra crops are not counted since their occurrence is rare, except in the case of potatoes. The chance of an extra potato is ≈25%, much higher than with any other crop. Thus, the Sell Price per Harvest is 1.25 × 80 instead of 1 × 80.
+    // In the case of plants that always give >1 item per harvest (e.g., Coffee Bean, Blueberry, Cranberries) the Sell Price per Harvest = # of crops per Harvest × Sell Price for one item.
     let current_season = ctx.selected_season; 
     let price = 0;
     let harvest_seasons = crop.season;
@@ -449,7 +455,11 @@ function createRankingChart(){
                 .delay((d,i) => i * 100)
                 .ease(d3.easeLinear)
             .attr("y", d => y(crops[d.rank].crop) - 5)
-            .attr("opacity", 1);
+            .attr("opacity", 1)
+            .selection()
+            .append("title")
+                .text(d => crop.crop.replace(/_/g, " ") + ": " +d.value + "g");
+
     });
         
 }

@@ -532,7 +532,6 @@ function isInRange(hour, range){
 
 
 function isFishMatch(fish){
-    const seasons = ["Spring", "Summer", "Fall", "Winter"];
     const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
     const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
         return selected ? fish.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
