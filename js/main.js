@@ -382,7 +382,7 @@ function loadData(){
             ctx.fish_chances[files[i]] = data[i];
         }
         fishAveragePricePerTime();
-        createXPDifficultyScatter(ctx.FISH_DATA);
+        // createXPDifficultyScatter(ctx.FISH_DATA);
     })
 }
 
@@ -468,7 +468,14 @@ function addFishToList(){
         .data(ctx.FISH_DATA)
         .enter()
         .append("li")
-        .text(d => d.name)
+        .each(function(d){
+            const li = d3.select(this);
+            li.append("img")
+                .attr("src", `data/images/fish/${d.name.replace(/ /g, "_")}.png`);
+            li.append("span")
+                .text(d.name);
+        })
+        // .text(d => d.name)
         .on("click", function(event, fish){
             displayFishInfo(fish);
         });
@@ -521,7 +528,7 @@ function filterFish(searchTerm=""){
     container.selectAll("li")
         .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
 
-    createXPDifficultyScatter(finalFilteredData);
+    // createXPDifficultyScatter(finalFilteredData);
 
 
 }
@@ -956,8 +963,8 @@ function fishAveragePricePerTime(){
     });
 
     const config = {
-        w: 300,
-        h: 300,
+        w: 250,
+        h: 250,
         margin: {top: 50, right: 50, bottom: 50, left: 50},
 		maxValue: 0.5,
 		levels: 5,
@@ -1059,7 +1066,7 @@ function createXPDifficultyScatter(data){
     .call(d3.axisLeft(y));
 
     // Add dots
-    svg.append('g')
+    let dots = svg.append('g')
     .selectAll("dot")
     .data(data)
     .join("circle")
@@ -1068,21 +1075,30 @@ function createXPDifficultyScatter(data){
         .attr("cy", d => y(d.baseXP) )
         .attr("r", 2)
         .style("fill", "#69b3a2")
-        .append("title")
-            .text(d => d.name + ": " + d.baseXP + " XP");
+    dots.append("title")
+        .text(d => d.name + ": " + d.baseXP + " XP");
 
-    // // Add images
-    // svg.append('g')
-    //     .selectAll("image")
-    //     .data(data)
-    //     .join("image")
-    //         .attr("xlink:href", d => `data/images/fish/${d.name.replace(/ /g, "_")}.png`)
-    //         .attr("x", d => x(d.difficulty) - 7.5)
-    //         .attr("y", d => y(d.baseXP) - 7.5)
-    //         .attr("width", 15)
-    //         .attr("height", 15)
-    //         .append("title")
-    //             .text(d => d.name + ": " + d.baseXP + " XP");
+    // Add images
+    let images = svg.append('g')
+        .selectAll("image")
+        .data(data)
+        .join("image")
+            .attr("xlink:href", d => `data/images/fish/${d.name.replace(/ /g, "_")}.png`)
+            .attr("x", d => x(d.difficulty) - 7.5)
+            .attr("y", d => y(d.baseXP) - 7.5)
+            .attr("width", 15)
+            .attr("height", 15)
+            .style("display", "none")
+        images.append("title")
+                .text(d => d.name + ": " + d.baseXP + " XP");
+
+    d3.select("#toggleFish").on("click", function(){
+        console.log("test",dots, images);
+        const isDotVisible = dots.style("display") != "none";
+        dots.style("display", isDotVisible ? "none" : null);
+        images.style("display", isDotVisible ? null : "none");
+        d3.select(this).text(isDotVisible ? "Switch to Points" : "Switch to Images");
+    });
 }
 
 
