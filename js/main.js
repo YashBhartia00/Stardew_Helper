@@ -287,7 +287,7 @@ function mapInit(){
 
     // Load game map
     const bounds = [[0, 0], [ctx.MAP_H,ctx.MAP_W]];
-    imageOverlay = L.imageOverlay('../data/images/map/main.jpg', bounds).addTo(map);
+    imageOverlay = L.imageOverlay('data/images/map/main.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
     setPolygons();
@@ -306,7 +306,7 @@ function mapInit(){
             map.removeLayer(imageOverlay);
         }
         const newBounds = [[0, 0], [ctx.MAP_H,ctx.MAP_W]];
-        imageOverlay = L.imageOverlay('../data/images/map/main.jpg', newBounds).addTo(map);
+        imageOverlay = L.imageOverlay('data/images/map/main.jpg', newBounds).addTo(map);
 
         // Update areas
         setPolygons();
