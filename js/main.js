@@ -12,15 +12,14 @@ const ctx = {
     locations: ["Ocean", "Mountain_Lake", "River_Town", "River_Forest", "Forest_Pond", "The_Desert", "Secret_Woods_Pond"],
 }
 
-// TODO: when reset filter, change color of time wheel back to default
-// Fix issue when reseting with the updating of the scatterplot, for now, create scatter each time
+
 
 let map, imageOverlay
 const polygons = {}
 
 /**
  * Converts relative coordinates to absolute coordinates
- * @param {*} relativeCoords 
+ * @param {*} relativeCoords
  * @returns absolute coordinates calculated based on the map dimensions
  */
 function convertRelativeToAbsolute(relativeCoords){
@@ -172,18 +171,18 @@ function setPolygons(){
     ]
 
     const areaSecretWoodsRelative = [
-        [0.47, 0.08],   
-        [0.48, 0.06],   
-        [0.49, 0.05],   
-        [0.50, 0.045],  
-        [0.51, 0.05],   
-        [0.52, 0.06],   
-        [0.53, 0.08],   
-        [0.52, 0.11],   
-        [0.51, 0.12],   
-        [0.50, 0.125],   
-        [0.49, 0.12],   
-        [0.48, 0.11]    
+        [0.47, 0.08],
+        [0.48, 0.06],
+        [0.49, 0.05],
+        [0.50, 0.045],
+        [0.51, 0.05],
+        [0.52, 0.06],
+        [0.53, 0.08],
+        [0.52, 0.11],
+        [0.51, 0.12],
+        [0.50, 0.125],
+        [0.49, 0.12],
+        [0.48, 0.11]
     ]
 
     const areas = {
@@ -224,7 +223,7 @@ function setPolygons(){
         polygons[key].bindTooltip(locationKey, {
             sticky: true
         });
-        
+
 
         polygons[key].locationKey = locationKey;
 
@@ -326,7 +325,7 @@ function createViz(){
     loadData();
     timeWheel();
     handleWeatherSelection();
-    
+
     document.getElementById("reset").addEventListener("click", function(){
         ctx.SELECTED_AREAS = [];
         setPolygons();
@@ -340,6 +339,7 @@ function createViz(){
         d3.selectAll("path.time").style("opacity", 0.3);
 
         filterFish();
+        updateRadarChart();
     });
 }
 
@@ -375,8 +375,8 @@ function loadData(){
         addFishToList();
         ctx.fish_chances = {};
         chanceFiles.forEach((file, index) => {
-            // Sometimes location is 2 words separated by _ (ie River_Town), or even 3 words 
-            let location = file.split("/")[2].split("_")[0]; 
+            // Sometimes location is 2 words separated by _ (ie River_Town), or even 3 words
+            let location = file.split("/")[2].split("_")[0];
             let second = file.split("/")[2].split("_")[1];
             let third = file.split("/")[2].split("_")[2];
 
@@ -394,13 +394,11 @@ function loadData(){
                 season = file.split("/")[2].split("_")[3];
                 weather = file.split("/")[2].split("_")[4].split(".")[0];
             }
-            // console.log(index+3, files.length, chanceFiles[index], location, season, weather);
             processChancesData(location, season, weather, data[index + 3]);
         })
         ctx.fish_detail = data[0];
-
-        console.log("chances",ctx.fish_chances);
         fishAveragePricePerTime();
+        updateProfitBarChart();
     })
 }
 
@@ -458,18 +456,18 @@ function processFishData(data){
         let location = fish.Location.split('\n').flatMap(loc => {
             return loc.split(',').flatMap(l => {
                 l = l.trim();
-                
+
                 // Handle river locations first with exact string matching
                 const riverLocations = {
                     "River (Town+Forest)": ['River_Town', 'River_Forest'],
                     "River (Forest)": ['River_Forest'],
                     "River (Town)": ['River_Town']
                 };
-                
+
                 if (riverLocations[l]) {
                     return riverLocations[l];
                 }
-                
+
                 // Handle other locations
                 return l
                     .replace(/[()]/g, '') // Remove parentheses
@@ -492,9 +490,7 @@ function processFishData(data){
         }
     });
 
-
     ctx.FISH_DATA = fishData;
-    console.log(ctx.FISH_DATA);
 }
 
 /**
@@ -566,6 +562,12 @@ function isInRange(hour, range){
 
 
 function isFishMatch(fish){
+    // Change consditions for an OR condition
+    // const matchesArea = ctx.SELECTED_AREAS.length > 0 ? ctx.SELECTED_AREAS.some(area => fish.location.includes(area)) : true;
+    // const matchesSeason = ctx.SELECTED_SEASON.includes(fish.seasons);
+
+    // console.log( ctx.SELECTED_AREAS.some(area => fish.location.includes(area)));
+    // console.log(ctx.SELECTED_AREAS);
     const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
     const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
         return selected ? fish.seasons.includes(ctx.seasons[index]) : true;
@@ -589,6 +591,7 @@ function filterFish(searchTerm=""){
     container.selectAll("li")
         .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
 
+    updateProfitBarChart()
 }
 
 
@@ -614,7 +617,7 @@ function displayFishInfo(fish){
             overlay.remove(); // Close the container on close
         mapContainer.style.zIndex = 1; // Put map back on top
         }, 500);
-        
+
     });
 
     // Add fish name
@@ -683,8 +686,8 @@ function FilterByName() {
 
 /**
  * Creates a bar chart to display the price breakdown of a fish
- * @param {*} selector 
- * @param {*} fishName 
+ * @param {*} selector
+ * @param {*} fishName
  */
 function priceBarChart(selector, fishName){
     let margin = {top: 10, right: 30, bottom: 20, left: 40},
@@ -970,7 +973,17 @@ function timeWheel(){
             .attr("transform", d => `translate(${outerArc.centroid(d)})`)
             .attr("dy", "0.35em")
             .style("text-anchor", "middle")
-            .text(d => d.data.key);    
+            .text(d => d.data.key);
+}
+
+
+function isFishMatchNoTime(fish){
+    const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
+    const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
+        return selected ? fish.seasons.includes(ctx.seasons[index]) : true;
+    });
+    const matchesWeather = fish.weather.includes(ctx.SELECTED_WEATHER) || fish.weather.includes("Any")  || ctx.SELECTED_WEATHER == "Any";
+    return matchesArea && matchesSeason && matchesWeather;
 }
 
 /**
@@ -979,12 +992,11 @@ function timeWheel(){
  * @param {*} season the season to compute the profit for
  * @returns the hourly profit
  */
-function computeHourlyProfit(hour, season, locations=ctx.locations, weather=["Sun", "Rain"]){
-    // TODO: modify formula dividing by number of fishes in the location
-    // total multipled by fishesPerHour
+function computeHourlyProfit(hour, season, locations, weather){
+    // TODO: Only compute for fishes that are available in the given season
     let total = 0;
+    // console.log("compute hourly profit", hour, season, locations, weather);
     const fishPerHour = 2; // A player can fish about 2 fishes per game hour
-
     locations.forEach(location => {
         weather.forEach(weather => {
             let chances = ctx.fish_chances[location + "_" + season + "_" + weather];
@@ -998,6 +1010,8 @@ function computeHourlyProfit(hour, season, locations=ctx.locations, weather=["Su
                 let fish = row;
                 let chance = chances[row];
                 let fishData = ctx.FISH_DATA.find(f => f.name == fish);
+                if(fishData && !isFishMatchNoTime(fishData)) return;
+                // if(location == "Secret_Woods_Pond") console.log("fish", fish, "chance", chance, "fishData", fishData);
                 if(!fishData){
                     if (fish == "Green Algae"){
                         let price = 15;
@@ -1012,10 +1026,10 @@ function computeHourlyProfit(hour, season, locations=ctx.locations, weather=["Su
                     fishCount++;
                 }
             })
-            console.log("fishCount, profit", fishCount, profit);
             if(profit > 0)
                 total += profit / fishCount * fishPerHour;
         });
+        if(location == "Secret_Woods_Pond") console.log("total", total);
     })
 
     return total; // Placeholder
@@ -1037,6 +1051,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
         data.push(point);
     });
 
+    // console.log("chart", data);
 
     maxValue = d3.max(data.map(season => d3.max(Object.values(season))));
     let width = 600;
@@ -1067,7 +1082,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
             let y = Math.sin(angle) * radialScale(value);
             return {"x": width / 2 + x, "y": height / 2 - y};
     }
-    
+
     svg.selectAll(".ticklabel")
         .data(ticks)
         .join(
@@ -1104,7 +1119,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                 .attr("y2", d => d.line_coord.y)
                 .attr("stroke", "lightgrey")
         )
-    
+
     // draw axes labels
     svg.selectAll(".axislabel")
         .data(featureData)
@@ -1126,7 +1141,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                         return "0.5em";
                     } else {
                         return "-0.5em";
-                    }   
+                    }
                 })
                 .text(d =>  formatTime(d.name))
         )
@@ -1147,6 +1162,18 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
         return coordinates;
     }
 
+    // To do, assign colors to each season 0 Spring, 1 Summer, 2 Fall, 3 Winter
+    function indexSeason(i){
+        console.log("indexSeason", seasons.length, i);
+        if(seasons.length == 4) return i;
+        for(let j = 0; j < seasons.length; j++){
+            if(seasons[j] == "Spring") return 0;
+            if(seasons[j] == "Summer") return 1;
+            if(seasons[j] == "Fall") return 2;
+            if(seasons[j] == "Winter") return 3;
+        }
+    }
+
     svg.selectAll("path")
         .data(data)
         .join(
@@ -1154,18 +1181,19 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                 .datum(d => getPathCoordinates(d))
                 .attr("d", line)
                 .attr("stroke-width", 2)
-                .attr("stroke", (d, i) => colors(i))
-                .attr("fill", (d, i) => colors(i))
+                .attr("stroke", (d, i) => colors((i)))
+                .attr("fill", (d, i) => colors((i)))
                 .attr("fill-opacity", 0.2)
         );
+
+    function formatTime(hour){
+        const hourInt = parseInt(hour);
+        const formattedHour = hourInt%2400;
+        const hourPart = Math.floor(formattedHour / 100);
+        return `${hourPart}:00`;
+    }
 }
 
-function formatTime(hour){
-    const hourInt = parseInt(hour);
-    const formattedHour = hourInt%2400;
-    const hourPart = Math.floor(formattedHour / 100);
-    return `${hourPart}:00`;
-}
 
 function updateRadarChart(){
     d3.select("#radarChart").select("svg").remove();
@@ -1175,7 +1203,7 @@ function updateRadarChart(){
     if (selectedAreas.length == 0) selectedAreas = ctx.locations;
     let selectedWeather = [ctx.SELECTED_WEATHER];
     if(ctx.SELECTED_WEATHER == "Any") selectedWeather = ["Sun", "Rain"];
-    fishAveragePricePerTime(selectedSeason, selectedAreas);
+    fishAveragePricePerTime(selectedSeason, selectedAreas, selectedWeather);
 }
 
 
@@ -1194,48 +1222,7 @@ function handleWeatherSelection(){
         updateRadarChart();
     });
 }
-/**
- * Creates a selector for the weather
- */
-// function createWeatherSelector() {
-//     ctx.SELECTED_WEATHER = null;
 
-//     const weatherDiv = d3.select("#filters")
-//         .append("div")
-//         .attr("class", "weather-selector");
-
-//     weatherDiv.append("button")
-//         .attr("class", "weather-btn")
-//         .attr("data-weather", "sun")
-//         .text("Sunny")
-//         .on("click", function(){
-//             d3.selectAll(".weather-btn").classed("selected", false);
-//             const isSelected = ctx.SELECTED_WEATHER == 'Sun';
-//             if(!isSelected){
-//                 d3.select(this).classed("selected", true);
-//                 ctx.SELECTED_WEATHER = 'Sun';
-//             } else {
-//                 ctx.SELECTED_WEATHER = 'Any';
-//             }
-//             filterFish();
-//         });
-    
-//     weatherDiv.append("button")
-//         .attr("class", "weather-btn")
-//         .attr("data-weather", "rain")
-//         .text("Rainy")
-//         .on("click", function(){
-//             d3.selectAll(".weather-btn").classed("selected", false);
-//             const isSelected = ctx.SELECTED_WEATHER == 'Rain';
-//             if(!isSelected){
-//                 d3.select(this).classed("selected", true);
-//                 ctx.SELECTED_WEATHER = 'Rain';
-//             } else {
-//                 ctx.SELECTED_WEATHER = 'Any';
-//             }
-//             filterFish();
-//         });
-// }
 
 function createXPDifficultyScatter(data){
     const margin = {top: 10, right: 30, bottom: 30, left: 60},
@@ -1344,7 +1331,7 @@ function updateXPDifficultyScatter(data){
         .style("fill", "#69b3a2")
         .transition(trans)
         .attr("r", 2)
-        
+
     circles.transition(trans)
         .attr("cx", d =>  x(d.difficulty))
         .attr("cy", d => y(d.baseXP) )
@@ -1358,4 +1345,85 @@ function updateXPDifficultyScatter(data){
 
     circles.append("title")
         .text(d => d.name + ": " + d.baseXP + " XP");
+}
+
+function createProfitBarChart(data){
+    d3.select("#profitBarChart").select("svg").remove();
+    const margin = { top: 20, bottom:20, left: 20, right:20}
+    width = 400 - margin.left - margin.right;
+    height = 400 - margin.top - margin.bottom;
+
+    let svg = d3.select("#profitBarChart")
+        .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    let x = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.profit)])
+        .range([0, width]);
+
+    let y = d3.scaleBand()
+        .domain(data.map(d => d.name))
+        .range([0, height])
+        .padding(0.1);
+
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+            .attr("transform", "translate(-10,0)rotate(-45)")
+            .style("text-anchor", "end");
+
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    // Bars
+    svg.selectAll("myRect")
+        .data(data)
+        .enter()
+        .append("rect")
+            .attr("x", x(0))
+            .attr("y", d => y(d.name))
+            .attr("width", d => x(d.profit))
+            .attr("height", y.bandwidth())
+            .attr("fill", "#69b3a2")
+}
+
+function updateProfitBarChart(){
+    let selectedSeason = ctx.seasons.map((season, index) => ctx.SELECTED_SEASON[index] ? season : null).filter(season => season);
+    if (selectedSeason.length == 0) selectedSeason = ctx.seasons;
+
+    let selectedWeather = [ctx.SELECTED_WEATHER];
+    if(ctx.SELECTED_WEATHER == "Any") selectedWeather = ["Sun", "Rain"];
+
+    let selectedTime = ctx.SELECTED_TIME.map((selected, index) => selected ? index + 6 : null).filter(time => time != null);
+    if (selectedTime.length == 0) selectedTime = d3.range(6, 26);
+
+    for(let i = 0 ; i < selectedTime.length; i++){
+        selectedTime[i] = selectedTime[i].toString();
+        if(selectedTime[i] == "24") selectedTime[i] = "0";
+        else if(selectedTime[i] == "25") selectedTime[i] = "100";
+        else {
+            selectedTime[i] = selectedTime[i] + "00";
+        }
+    }
+
+    const data = ctx.locations.map(location => {
+        let totalProfit = 0;
+        selectedSeason.forEach(season => {
+            selectedTime.forEach(time => {
+                selectedWeather.forEach(weather => {
+                    totalProfit += computeHourlyProfit(time, [season], [location], [weather]);
+                })
+            })
+        });
+        return {
+            name: location,
+            profit: totalProfit
+        }
+    })
+    console.log("data", data);
+    createProfitBarChart(data);
 }
