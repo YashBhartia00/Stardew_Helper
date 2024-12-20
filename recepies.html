@@ -20,11 +20,23 @@
             font-family: Arial, sans-serif;
             font-size: 12px;
         }
+        .category-filter-button {
+            margin: 2px;
+            padding: 5px 10px;
+        }
+        .category-filter-button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <h1>Recipes and Ingredients Graph</h1>
     <button id="resetButton">Reset</button>
+    <button id="reduceOverlapButton">Reduce Overlap</button>
+    <button id="toggleButton">Toggle Visualization</button>
+    <div id="filterButtons"></div>
+    <div id="categoryFilterButtons"></div>
     <svg width="800" height="600"></svg>
     <script src="js/recepie_graph.js"></script>
 </body>

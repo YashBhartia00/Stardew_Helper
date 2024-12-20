@@ -1,232 +1,425 @@
+// Global context object
+const ctx = {
+    svg: null,
+    width: null,
+    height: null,
+    nodes: {},
+    links: [],
+    ingredientTypeMap: {},
+    typeColor: null,
+    simulation: null,
+    linkedByIndex: {},
+    recepieData: [],
+    isScatterPlot: false, // New flag to track current visualization
+    ingredientCategories: [],
+    selectedCategories: new Set(),
+};
+
+// Define scale variables globally
+let xScale;
+let yScale;
+
 // Initialize SVG canvas
 function initSvg() {
-    const width = 1200;
-    const height = 720;
-    const svg = d3.select('svg')
-        .attr('width', width)
-        .attr('height', height);
-    return { svg, width, height };
+    ctx.width = 1200;
+    ctx.height = 720;
+    ctx.svg = d3.select('svg')
+        .attr('width', ctx.width)
+        .attr('height', ctx.height);
 }
 
 // Define arrow markers
-function defineArrowMarkers(svg) {
-    svg.append('defs').append('marker')
-        .attr('id', 'arrowhead')
-        .attr('viewBox', '-0 -5 10 10')
-        .attr('refX', 23) // Adjust refX based on your node size
-        .attr('refY', 0)
-        .attr('orient', 'auto')
-        .attr('markerWidth', 13)
-        .attr('markerHeight', 13)
-        .attr('xoverflow', 'visible')
-      .append('svg:path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', '#999')
-        .style('stroke', 'none');
+function defineArrowMarkers() {
+    // Remove the arrow marker definition
+}
+
+// Load recepie data
+function loadRecepieData(callback) {
+    d3.csv('data/recepies/recepie_data.csv').then(function(recepieData) {
+        ctx.recepieData = recepieData;
+        callback();
+    });
 }
 
 // Load ingredient data and create type-color mapping
-function loadIngredientData(nodes, callback) {
+function loadIngredientData(callback) {
     d3.csv('data/recepies/ingredient_data.csv').then(function(ingredientData) {
-        const typeColor = d3.scaleOrdinal(d3.schemeCategory10);
-        const ingredientTypeMap = {};
         ingredientData.forEach(d => {
-            ingredientTypeMap[d.name] = d.type;
             d.price = +d.price || 0;
-        });
+            ctx.nodes[d.name] = { id: d.name, group: 'ingredient', price: d.price, type: d.type };
 
-        // Get unique types and create type nodes
-        const types = [...new Set(ingredientData.map(d => d.type))];
-        types.forEach(type => {
-            nodes[type] = { id: type, group: 'type', type: type};
+            // Collect unique ingredient categories
+            if (ctx.ingredientCategories.indexOf(d.type) === -1) {
+                ctx.ingredientCategories.push(d.type);
+            }
         });
-
-        callback(ingredientData, ingredientTypeMap, typeColor);
+        callback();
     });
 }
 
 // Load main data and process nodes and links
-function loadMainData(nodes, links, ingredientData, ingredientTypeMap, typeColor, callback) {
+function loadMainData(callback) {
     d3.csv('data/recepies/graph_data.csv').then(function(data) {
-        // Create nodes and links from the data
         data.forEach(d => {
-            //use ingredent data as price source as the price is not available in the graph data
-            if(!nodes[d.ingredient]) { nodes[d.ingredient] = { id: d.ingredient, group: 'ingredient', type: ingredientTypeMap[d.ingredient] , price: ingredientData.find(x => x.name === d.ingredient).price}; }
-
-            // Add recipe nodes
-            if (!nodes[d.recepie]) nodes[d.recepie] = { id: d.recepie, group: 'recepie'};
-            // Add ingredient nodes
-            // if (!nodes[d.ingredient]) nodes[d.ingredient] = { id: d.ingredient, group: 'ingredient', type: ingredientTypeMap[d.ingredient] , price: +d.price};
-            // Add links from recipes to ingredients
-            links.push({ source: d.ingredient, target: d.recepie, value: +d.amount });
+            if (!ctx.nodes[d.recepie]) {
+                const recepieInfo = ctx.recepieData.find(r => r.name === d.recepie);
+                const price = recepieInfo ? +recepieInfo.price || 0 : 0;
+                ctx.nodes[d.recepie] = { id: d.recepie, group: 'recepie', price: price };
+            }
+            ctx.links.push({ source: d.ingredient, target: d.recepie, value: +d.amount });
         });
-
-        // Add links from type nodes to ingredient nodes
-        // ingredientData.forEach(d => {
-        //     if (nodes[d.name]) {
-        //         links.push({
-        //             source: d.type,
-        //             target: d.name,
-        //             value: 1
-        //         });
-        //     }
-        // });
-
-        // Convert nodes object to array
-        const nodesArray = Object.values(nodes);
-
-        // Create an index for quick lookup of connections
-        const linkedByIndex = {};
-        links.forEach(d => {
-            linkedByIndex[`${d.source.index},${d.target.index}`] = true;
-        });
-
-        callback(nodesArray, links, linkedByIndex);
+        callback();
     });
 }
 
 // Create simulation
-function createSimulation(width, height) {
-    const simulation = d3.forceSimulation()
-        .force('link', d3.forceLink().id(d => d.id).strength(-1))
-        .force('charge', d3.forceManyBody().strength(-400))
-        .force('center', d3.forceCenter(width / 2, height / 2).strength(0.1))
-        .force('collision', d3.forceCollide().radius(25))
-        // .force('maxDistance', maxDistanceForce(maxDistance)); // Adding the max distance force
-    return simulation;
+function createSimulation() {
+    ctx.simulation = d3.forceSimulation()
+        .force('link', d3.forceLink()
+            .id(d => d.id)
+            .distance(50)
+            .strength(2))
+        .force('charge', d3.forceManyBody()
+            .strength(-100)
+            .distanceMax(500))
+        .force('center', d3.forceCenter(ctx.width / 2, ctx.height / 2))
+        .force('collision', d3.forceCollide()
+            .radius(d => getNodeSize(d) / 2 + 5))
+        .on('tick', ticked);
 }
 
 // Add zoom functionality
-function addZoom(svg, g) {
+function addZoom() {
     const zoom = d3.zoom()
         .scaleExtent([0.1, 10])
         .on('zoom', function(event) {
-            g.attr('transform', event.transform);
+            ctx.g.attr('transform', event.transform);
         });
-    svg.call(zoom);
+    ctx.svg.call(zoom);
 }
 
-// Create nodes and links
-function createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, simulation) {
-    // Add the links
-    const link = g.append('g')
+// Update the createNodesAndLinks function to set up empty selections
+function createNodesAndLinks() {
+    ctx.g = ctx.svg.append('g');
+
+    // Create empty link and node selections
+    ctx.link = ctx.g.append('g')
         .attr('class', 'links')
-        .selectAll('line')
-        .data(links)
-        .enter().append('line')
+        .selectAll('line');
+
+    ctx.node = ctx.g.append('g')
+        .attr('class', 'nodes')
+        .selectAll('g');
+
+    // Define the tooltip div
+    const tooltip = d3.select('body').append('div')
+        .attr('class', 'tooltip')
+        .style('position', 'absolute')
+        .style('display', 'none')
+        .style('background', '#fff')
+        .style('border', '1px solid #ccc')
+        .style('padding', '5px');
+
+    // Initialize the visualization with all nodes and links
+    updateVisualization(ctx.nodes, ctx.links);
+}
+
+// Update the updateVisualization function
+function updateVisualization(filteredNodes, filteredLinks) {
+    // Convert filteredNodes to an array if it's an object
+    const nodesArray = Object.values(filteredNodes);
+
+    // Update simulation nodes and links if simulation is defined
+    if (ctx.simulation) {
+        ctx.simulation.nodes(nodesArray);
+        ctx.simulation.force('link').links(filteredLinks);
+    }
+
+    // Update links
+    ctx.link = ctx.g.select('.links').selectAll('line')
+        .data(filteredLinks, d => `${d.source.id}->${d.target.id}`);
+
+    // Remove old links
+    ctx.link.exit().remove();
+
+    // Add new links
+    const linkEnter = ctx.link.enter().append('line')
         .attr('class', 'link')
-        .attr('marker-end', 'url(#arrowhead)')
         .attr('stroke-width', d => d.value)
         .attr('stroke', '#999')
         .style('opacity', 0.6);
 
-    // Add the nodes as groups
-    const node = g.append('g')
-        .attr('class', 'nodes')
-        .selectAll('g')
-        .data(nodesArray)
-        .enter().append('g')
-        .style('opacity', d => d.group === 'ingredient' ? 0.7 : 1)
-        .call(d3.drag()
-            .on('start', defineDrag.dragstarted)
-            .on('drag', defineDrag.dragged)
-            .on('end', defineDrag.dragended));
+    ctx.link = linkEnter.merge(ctx.link);
 
-    // Append images to ingredient and recipe nodes
-    node.filter(d => d.group === 'ingredient' || d.group === 'recepie')
+    // Update nodes
+    ctx.node = ctx.g.select('.nodes').selectAll('g')
+        .data(nodesArray, d => d.id);
+
+    // Remove old nodes
+    ctx.node.exit().remove();
+
+    // Add new nodes
+    const nodeEnter = ctx.node.enter().append('g')
+        .attr('class', 'node')
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+
+    // Append images to entering nodes
+    nodeEnter.filter(d => d.group === 'ingredient' || d.group === 'recepie')
         .append('image')
         .attr('xlink:href', d => `data/images/recepies_ingredients/${d.id}.png`)
-        .attr('x', d => d.price ? -Math.sqrt(d.price) / 2 : -16)
-        .attr('y', d => d.price ? -Math.sqrt(d.price) / 2 : -16)
-        .attr('width', d => d.price ? Math.sqrt(d.price) : 32)
-        .attr('height', d => d.price ? Math.sqrt(d.price) : 32)
-        // .on('error', function() { d3.select(this).attr('xlink:href', 'data/images/recepies_ingredients/default.png'); }); // Fallback for missing images
+        .attr('x', d => -getNodeSize(d) / 2)
+        .attr('y', d => -getNodeSize(d) / 2)
+        .attr('width', d => getNodeSize(d))
+        .attr('height', d => getNodeSize(d));
 
-    // Append circles for outlines
-    node.append('circle')
-        .attr('r', d => {
-            if (d.group === 'type') return 30;
-            if (d.group === 'ingredient') {console.log(d.price); return Math.sqrt(d.price) / 2 || 16; } // Handle NaN values
-            if (d.group === 'recepie') return Math.sqrt(d.price) / 2 || 16; // Handle NaN values
-            return 16;
-        })
-        .attr('stroke', d => typeColor(d.type))
-        .attr('fill', d => {
-            if (d.group === 'type') return typeColor(d.type);
-            else if (d.group === 'recepie') return 'none';
-            else return 'none';
-        })
+    // Append circles to entering nodes
+    nodeEnter.append('circle')
+        .attr('r', d => getNodeSize(d) / 2)
+        .attr('stroke', d => d.group === 'ingredient' ? '#4682b4' : '#ff8c00')
+        .attr('fill', 'none')
         .attr('stroke-width', 2);
 
-    // For type nodes, add text labels
-    node.filter(d => d.group === 'type')
-        .append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dy', '.35em')
-        .text(d => d.id)
-        .attr('pointer-events', 'none')
-        .attr('fill', '#fff');
+    // Merge entering and updating nodes
+    ctx.node = nodeEnter.merge(ctx.node);
 
-    // Add hover interactions
-    node.on('mouseover', function(event, d) {
-        if (d.group === 'recepie') {
-            node.filter(n => n.group === 'ingredient' && linkedByIndex[`${d.index},${n.index}`])
-                .style('opacity', 1);
-        }
-    }).on('mouseout', function(event, d) {
-        if (d.group === 'recepie') {
-            node.filter(n => n.group === 'ingredient' && linkedByIndex[`${d.index},${n.index}`])
-                .style('opacity', 0.7);
-        }
-    });
+    // Update attributes and event listeners for all nodes
+    ctx.node.style('opacity', d => d.group === 'ingredient' ? 0.7 : 1)
+        .on('mouseover', function(event, d) {
+            highlightNode(d);
+            tooltip.style('display', 'inline-block')
+                .html(getTooltipContent(d));
+        })
+        .on('mousemove', function(event) {
+            tooltip.style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY + 10) + 'px');
+        })
+        .on('mouseout', function() {
+            resetHighlight();
+            tooltip.style('display', 'none');
+        });
 
-    // Add click event to type nodes to create and delete links
-    // node.filter(d => d.group === 'type')
-    //     .on('click', function(event, typeNode) {
-    //         // Create links from type node to its ingredients
-    //         const typeLinks = links.filter(l => l.source.type === typeNode.id || l.target.type === typeNode.id);
-    //         const newLinks = typeLinks.map(l => ({ source: typeNode.id, target: l.target.id, value: 1 }));
+    // Restart the simulation if it is defined
+    if (ctx.simulation) {
+        ctx.simulation.alpha(1).restart();
+    }
 
-    //         // Add new links to the graph
-    //         const newLinkElements = g.selectAll('.new-link')
-    //             .data(newLinks)
-    //             .enter().append('line')
-    //             .attr('class', 'new-link')
-    //             .attr('stroke', '#999')
-    //             .attr('stroke-width', 1)
-    //             .style('opacity', 0.6);
-
-    //         // Update the simulation with new links
-    //         simulation.force('link').links([...links, ...newLinks]);
-    //         simulation.alpha(0.5).restart();
-
-    //         // Remove the new links after a delay
-    //         setTimeout(() => {
-    //             newLinkElements.remove();
-    //             simulation.force('link').links(links);
-    //             simulation.alpha(0.5).restart();
-    //         }, 2000); // Adjust the delay as needed
-    //     });
-
-    return { node, link };
+    // If in scatter plot mode, update positions
+    if (ctx.isScatterPlot) {
+        updateScatterPlotPositions();
+    }
 }
 
-// Define drag interactions
-function defineDrag(simulation) {
-    return d3.drag()
-        .on('start', function(event, d) {
-            dragstarted(event, d, simulation);
-        })
-        .on('drag', function(event, d) {
-            dragged(event, d);
-        })
-        .on('end', function(event, d) {
-            dragended(event, d, simulation);
+// Adjust the createScatterPlot function to update positions without adding nodes
+function createScatterPlot() {
+    xScale = d3.scaleLinear()
+        .domain(d3.extent(ctx.recepieData, d => +d.price))
+        .range([100, ctx.width - 100]);
+
+    yScale = d3.scaleLinear()
+        .domain(d3.extent(ctx.recepieData, d => +d.health))
+        .range([ctx.height - 100, 100]);
+
+    // Update node positions
+    updateScatterPlotPositions();
+
+    // Hide links
+    ctx.link.style('opacity', 0);
+
+    // Remove forces
+    ctx.simulation.force('charge', null)
+        .force('link', null)
+        .force('collision', null)
+        .alpha(0)
+        .stop();
+
+    ctx.isScatterPlot = true;
+}
+
+// New function to update positions in scatter plot mode
+function updateScatterPlotPositions() {
+    ctx.node.transition().duration(1000)
+        .attr('transform', d => {
+            if (d.group === 'recepie') {
+                const recepieInfo = ctx.recepieData.find(r => r.name === d.id);
+                d.fx = xScale(+recepieInfo.price);
+                d.fy = yScale(+recepieInfo.health);
+                return `translate(${d.fx},${d.fy})`;
+            } else {
+                return `translate(${d.x},${d.y})`;
+            }
         });
 }
 
-function dragstarted(event, d, simulation) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
+// Toggle visualization on button click
+d3.select('#toggleButton').on('click', function() {
+    if (ctx.isScatterPlot) {
+        createForceDirectedGraph();
+    } else {
+        createScatterPlot();
+    }
+});
+
+// Initialize and load data
+function init() {
+    initSvg();
+    defineArrowMarkers();
+    loadRecepieData(function() {
+        loadIngredientData(function() {
+            loadMainData(function() {
+                createNodesAndLinks(); // Ensure nodes and links are created first
+                createSimulation(); // Ensure simulation is created before updating visualization
+                createIngredientCategoryFilterButtons(); // Ensure filter buttons are created
+                addZoom();
+                buildLinkedByIndex();
+                // Initialize the visualization with all nodes and links
+                updateVisualization(ctx.nodes, ctx.links);
+            });
+        });
+    });
+}
+
+// Add a button to run the link overlap reduction algorithm
+d3.select('#reduceOverlapButton').on('click', function() {
+    reduceLinkOverlaps();
+});
+
+// Implement the algorithm to reduce link overlaps
+function reduceLinkOverlaps() {
+    // Stop the simulation
+    ctx.simulation.stop();
+
+    // Simple algorithm to adjust node positions
+    const iterations = 10; // Number of iterations for adjustment
+    for (let i = 0; i < iterations; i++) {
+        ctx.nodesArray.forEach(node => {
+            let overlap = false;
+            ctx.nodesArray.forEach(otherNode => {
+                if (node !== otherNode) {
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const minDistance = (getNodeSize(node) + getNodeSize(otherNode)) / 2;
+                    if (distance < minDistance) {
+                        overlap = true;
+                        // Adjust positions to reduce overlap
+                        node.x += dx / distance * (minDistance - distance) * 0.1;
+                        node.y += dy / distance * (minDistance - distance) * 0.1;
+                    }
+                }
+            });
+        });
+    }
+
+    // Restart the simulation
+    ctx.simulation.alpha(0.5).restart();
+}
+
+// Create category filter buttons
+function createIngredientCategoryFilterButtons() {
+    const buttonContainer = d3.select('#categoryFilterButtons');
+    ctx.ingredientCategories.forEach(category => {
+        const button = buttonContainer.append('button')
+            .attr('class', 'category-filter-button active') // Add 'active' class
+            .text(category)
+            .on('click', function() {
+                toggleCategoryFilter(category, d3.select(this));
+            });
+        ctx.selectedCategories.add(category);
+    });
+
+    // Add 'All' button to select all categories
+    buttonContainer.append('button')
+        .attr('class', 'category-filter-button active')
+        .text('All')
+        .on('click', function() {
+            ctx.selectedCategories = new Set(ctx.ingredientCategories);
+            buttonContainer.selectAll('button.category-filter-button').classed('active', true);
+            filterByIngredientCategories();
+        });
+
+    // Style all buttons as active initially
+    buttonContainer.selectAll('button').classed('active', true);
+}
+
+// Function to toggle category selection
+function toggleCategoryFilter(category, button) {
+    if (ctx.selectedCategories.has(category)) {
+        ctx.selectedCategories.delete(category);
+        button.classed('active', false);
+    } else {
+        ctx.selectedCategories.add(category);
+        button.classed('active', true);
+    }
+    filterByIngredientCategories();
+}
+
+// Function to filter recipes based on selected ingredient categories
+function filterByIngredientCategories() {
+    // Get ingredients belonging to selected categories
+    const selectedIngredients = Object.values(ctx.nodes)
+        .filter(node => node.group === 'ingredient' && ctx.selectedCategories.has(node.type))
+        .map(node => node.id);
+
+    // Filter links where the ingredient is in selectedIngredients
+    const filteredLinks = ctx.links.filter(link => selectedIngredients.includes(link.source.id));
+
+    // Get recipes that have links with selected ingredients
+    const filteredRecipes = new Set(filteredLinks.map(link => link.target.id));
+
+    // Build filtered nodes
+    const filteredNodes = {};
+
+    // Include selected ingredients
+    selectedIngredients.forEach(ingredientName => {
+        filteredNodes[ingredientName] = ctx.nodes[ingredientName];
+    });
+
+    // Include recipes connected to selected ingredients
+    filteredRecipes.forEach(recipeName => {
+        filteredNodes[recipeName] = ctx.nodes[recipeName];
+    });
+
+    // Update visualization with filtered nodes and links
+    updateVisualization(filteredNodes, filteredLinks);
+}
+
+// Helper function to get tooltip content
+function getTooltipContent(d) {
+    if (d.group === 'ingredient') {
+        return `<strong>${d.id}</strong><br>Type: ${d.type}<br>Price: ${d.price}`;
+    } else if (d.group === 'recepie') {
+        return `<strong>${d.id}</strong><br>Price: ${d.price}`;
+    }
+    return '';
+}
+
+// Get node size based on price
+function getNodeSize(d) {
+    return d.price ? Math.sqrt(d.price) : 32;
+}
+
+// Update positions on each tick
+function ticked() {
+    if (ctx.node) { // Ensure ctx.node is defined
+        // Constrain nodes within boundaries
+        ctx.node.attr('transform', d => {
+            d.x = Math.max(0, Math.min(ctx.width, d.x));
+            d.y = Math.max(0, Math.min(ctx.height, d.y));
+            return `translate(${d.x},${d.y})`;
+        });
+
+        ctx.link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+    }
+}
+
+// Drag interactions
+function dragstarted(event, d) {
+    if (!event.active) ctx.simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
     d.fy = d.y;
 }
@@ -236,124 +429,67 @@ function dragged(event, d) {
     d.fy = event.y;
 }
 
-function dragended(event, d, simulation) {
-    if (!event.active) simulation.alphaTarget(0);
+function dragended(event, d) {
+    if (!event.active) ctx.simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
 }
 
-
-// Define hover interactions
-function defineHover(node, link, linkedByIndex) {
-    // Function to check if two nodes are connected
-    function isConnected(a, b) {
-        return linkedByIndex[`${a.index},${b.index}`] || linkedByIndex[`${b.index},${a.index}`] || a.index === b.index;
-    }
-
-    // Focus and unfocus functions for hover interactions
-    function focus(event, d) {
-        const index = d.index;
-        node.style('opacity', o => isConnected(d, o) ? 1 : 0.2);
-        link.style('opacity', o => o.source.index === index || o.target.index === index ? 1 : 0.2);
-    }
-
-    function unfocus() {
-        node.style('opacity', d => d.group === 'ingredient' ? 0.7 : 1);
-        link.style('opacity', 0.6);
-    }
-
-    node.on('mouseover', focus)
-        .on('mouseout', unfocus);
+// Highlight connected nodes
+function highlightNode(d) {
+    ctx.node.style('opacity', o => isConnected(d, o) ? 1 : 0.1);
+    ctx.link.style('opacity', o => o.source === d || o.target === d ? 1 : 0.1);
 }
 
-// Main execution
-const { svg, width, height } = initSvg();
-defineArrowMarkers(svg);
+function resetHighlight() {
+    ctx.node.style('opacity', d => d.group === 'ingredient' ? 0.7 : 1);
+    ctx.link.style('opacity', 0.6);
+}
 
-const g = svg.append('g');
+// Check if two nodes are connected
+function isConnected(a, b) {
+    return ctx.linkedByIndex[`${a.id},${b.id}`] || ctx.linkedByIndex[`${b.id},${a.id}`] || a.id === b.id;
+}
 
-// Append group for type hulls after creating 'g'
-const typeHulls = g.append('g')
-    .attr('class', 'type-hulls');
-
-// Declare nodes and links in the main scope
-const nodes = {};
-const links = [];
-const maxDistance = 200; // Set the maximum distance
-const simulation = createSimulation(width, height, maxDistance);
-
-loadIngredientData(nodes, function(ingredientData, ingredientTypeMap, typeColor) {
-    loadMainData(nodes, links, ingredientData, ingredientTypeMap, typeColor, function(nodesArray, links, linkedByIndex) {
-        const simulation = createSimulation(width, height);
-        // const maxDistance = 20; // Set the maximum distance
-        // const simulation = createSimulation(width, height, maxDistance);
-        addZoom(svg, g);
-        const { node, link } = createNodesAndLinks(g, nodesArray, links, typeColor, linkedByIndex, simulation);
-        node.call(defineDrag(simulation));
-        defineHover(node, link, linkedByIndex);
-
-        // Initialize the simulation
-        simulation
-            .nodes(nodesArray)
-            .on('tick', function() {
-                // Update links
-                link
-                    .attr('x1', d => d.source.x)
-                    .attr('y1', d => d.source.y)
-                    .attr('x2', d => d.target.x)
-                    .attr('y2', d => d.target.y);
-
-                // Update nodes
-                node.attr('transform', d => `translate(${d.x},${d.y})`);
-
-                // Update hulls for each type
-                // const types = d3.groups(nodesArray.filter(d => d.group === 'ingredient'), d => d.type);
-
-                // const hulls = typeHulls.selectAll('path')
-                //     .data(types);
-
-                // hulls.enter()
-                //     .append('path')
-                //     .attr('class', 'hull')
-                //     .merge(hulls)
-                //     .attr('d', function(d) {
-                //         const points = d[1].map(n => [n.x, n.y]);
-                //         if (points.length < 3) return null;
-                //         const hull = d3.polygonHull(points);
-                //         return 'M' + hull.join('L') + 'Z';
-                //     })
-                //     .attr('fill', d => typeColor(d[0]))
-                //     .attr('stroke', d => typeColor(d[0]))
-                //     .attr('stroke-width', 1)
-                //     .attr('opacity', 0.2);
-
-                // hulls.exit().remove();
-            });
-
-        simulation.force('link')
-            .links(links)
-            .distance(50)
-            .strength(0.8);
-            
-        d3.select('#resetButton').on('click', function() {
-            simulation.alpha(1).restart();
-            simulation.force('x', null);
-            simulation.force('y', null);
-        });
+// Build linkedByIndex for quick lookup
+function buildLinkedByIndex() {
+    ctx.links.forEach(d => {
+        ctx.linkedByIndex[`${d.source.id},${d.target.id}`] = true;
     });
-});
-// function maxDistanceForce(radius) {
-//     return function (d) {
-//         var dx = d.x - width / 2,
-//             dy = d.y - height / 2,
-//             distance = Math.sqrt(dx * dx + dy * dy);
+}
 
-//         if (distance > radius) {
-//             var angle = Math.atan2(dy, dx);
-//             d.x = width / 2 + Math.cos(angle) * radius;
-//             d.y = height / 2 + Math.sin(angle) * radius;
-//         }
-//     };
-// }
+// Transition back to force-directed graph
+function createForceDirectedGraph() {
+    // Remove fixed positions
+    ctx.node.each(d => {
+        d.fx = null;
+        d.fy = null;
+    });
 
-// Reset button functionality
+    // Show links
+    ctx.link.transition().duration(1000)
+        .style('opacity', 0.6);
+
+    // Restart simulation
+    ctx.simulation.force('link', d3.forceLink().id(d => d.id).distance(100))
+        .force('charge', d3.forceManyBody().strength(-400))
+        .force('center', d3.forceCenter(ctx.width / 2, ctx.height / 2))
+        .force('collision', d3.forceCollide().radius(25))
+        .alpha(1)
+        .restart();
+
+    ctx.isScatterPlot = false;
+}
+
+// Add CSS styles for the filter buttons
+d3.select('head').append('style').text(`
+    .category-filter-button {
+        margin: 2px;
+        padding: 5px 10px;
+    }
+    .category-filter-button.active {
+        background-color: #4CAF50;
+        color: white;
+    }
+`);
+init();
