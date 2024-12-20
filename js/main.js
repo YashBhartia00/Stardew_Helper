@@ -1188,7 +1188,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
         return coordinates;
     }
 
-    svg.selectAll("path")
+svg.selectAll("path")
         .data(data)
         .join(
             enter => enter.append("path")
@@ -1196,9 +1196,8 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                 .attr("d", line)
                 .attr("stroke-width", 2)
                 .attr("stroke", (d, i) => colors(seasons[i]))
-                .attr("fill", "none")
-                .append("title")
-                .text((d, i) => seasons[i])
+                .attr("fill", (d, i) => colors(seasons[i]))
+                .attr("fill-opacity", 0.2)
         );
 
     function formatTime(hour){
