@@ -398,7 +398,7 @@ function loadData(){
         })
         ctx.fish_detail = data[0];
         fishAveragePricePerTime();
-        updateProfitBarChart();
+        // updateProfitBarChart();
     })
 }
 
@@ -591,7 +591,7 @@ function filterFish(searchTerm=""){
     container.selectAll("li")
         .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
 
-    updateProfitBarChart()
+    // updateProfitBarChart()
 }
 
 
@@ -1150,7 +1150,9 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
         .x(d => d.x)
         .y(d => d.y);
 
-    let colors = d3.scaleOrdinal().range(["#00FF00", "#FFD700", "#FF8C00", "#1E90FF"]);
+    let colors = d3.scaleOrdinal()
+        .domain(ctx.seasons)
+        .range(["#00FF00", "#FFD700", "#FF8C00", "#1E90FF"]);
 
     function getPathCoordinates(data_point){
         let coordinates = [];
@@ -1162,18 +1164,6 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
         return coordinates;
     }
 
-    // To do, assign colors to each season 0 Spring, 1 Summer, 2 Fall, 3 Winter
-    function indexSeason(i){
-        console.log("indexSeason", seasons.length, i);
-        if(seasons.length == 4) return i;
-        for(let j = 0; j < seasons.length; j++){
-            if(seasons[j] == "Spring") return 0;
-            if(seasons[j] == "Summer") return 1;
-            if(seasons[j] == "Fall") return 2;
-            if(seasons[j] == "Winter") return 3;
-        }
-    }
-
     svg.selectAll("path")
         .data(data)
         .join(
@@ -1181,8 +1171,8 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                 .datum(d => getPathCoordinates(d))
                 .attr("d", line)
                 .attr("stroke-width", 2)
-                .attr("stroke", (d, i) => colors((i)))
-                .attr("fill", (d, i) => colors((i)))
+                .attr("stroke", (d, i) => colors(seasons[i]))
+                .attr("fill", (d, i) => colors(seasons[i]))
                 .attr("fill-opacity", 0.2)
         );
 
@@ -1291,7 +1281,6 @@ function createXPDifficultyScatter(data){
         d3.select(this).text(isDotVisible ? "Switch to Points" : "Switch to Images");
     });
 }
-
 
 function updateXPDifficultyScatter(data){
     const margin = {top: 10, right: 30, bottom: 30, left: 60},
