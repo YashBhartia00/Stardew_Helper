@@ -14,6 +14,10 @@
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
+#chart > svg > g > g.x-axis text {
+    font-size: 16px;
+}
+
 h2 {
     padding: 20px;
 }

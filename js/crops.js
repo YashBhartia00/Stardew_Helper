@@ -129,7 +129,7 @@ function updateChart(){
     });
 
     // Translate bars to their new position
-    let margin = {top: 30, right: 30, bottom: 70, left: 60}
+    let margin = {top: 30, right: 30, bottom: 100, left: 60}
     width = ctx.W - margin.left - margin.right,
     height = ctx.H - margin.top - margin.bottom;
 
@@ -141,9 +141,17 @@ function updateChart(){
     .domain(profit.map(function(d) { return d.crop; }))
     .padding(0.2);
 
+    let x_crops = d3.scaleBand()
+        .range([0, width])
+        .domain(profit.map(function(d) { return d.crop.replace(/_/g, " "); }))
+        .padding(0.2);
 
+    let [min, max] = d3.extent(profit, function(d) { return d.value; });
+    if (min == max){
+        min > 0 ? min = 0 : max = 0;
+    }
     let y = d3.scaleLinear()
-        .domain(d3.extent(profit, function(d) { return d.value; }))
+        .domain([min, max])
         .range([height, 0]);
 
     let trans = svg.transition().duration(1000);
@@ -151,9 +159,9 @@ function updateChart(){
     svg.select(".x-axis")
         .transition(trans)
         .attr("transform", "translate(0," + y(0) + ")")
-        .call(d3.axisBottom(x))
+        .call(d3.axisBottom(x_crops))
         .selectAll("text")
-            .attr("transform", "translate(-13,10)rotate(-90)")
+            .attr("transform", "translate(-15,10)rotate(-70)")
             .style("text-anchor", "end")
 
     svg.select(".y-axis")
@@ -234,7 +242,7 @@ function createChart(){
 
     // console.log(profit);
 
-    let margin = {top: 30, right: 30, bottom: 70, left: 60}
+    let margin = {top: 30, right: 30, bottom: 100, left: 60}
     width = ctx.W - margin.left - margin.right,
     height = ctx.H - margin.top - margin.bottom;
 
@@ -251,11 +259,21 @@ function createChart(){
         .domain(profit.map(function(d) { return d.crop; }))
         .padding(0.2);
 
+    let [min, max] = d3.extent(profit, function(d) { return d.value; });
+    if (min == max){
+            min > 0 ? min = 0 : max = 0;
+    }
     let y = d3.scaleLinear()
-        .domain(d3.extent(profit, function(d) { return d.value; }))
+        .domain([min, max])
         .range([height, 0]);
     
-    
+    let x_crops = d3.scaleBand()
+        .range([0, width])
+        .domain(profit.map(function(d) { return d.crop.replace(/_/g, " "); }))
+        .padding(0.2);
+
+
+    let transition = svg.transition().duration(1000).ease(d3.easePoly);
     // Positive values
     svg.append("g")
         .attr("class", "pos")
@@ -263,10 +281,14 @@ function createChart(){
         .data(profit.map(d => d.value > 0 ? d : {value: 0}))
         .join("rect")
             .attr("x", d => x(d.crop))
-            .attr("y", d => y(d.value))
-            .attr("height", d => y(0) - y(d.value))
+            .attr("y", d => y(0))
+            .attr("height", 0)
             .attr("width", x.bandwidth())
             .attr("fill", "#90EE90")
+            .transition(transition)
+                .attr("y", d => y(d.value))
+                .attr("height", d => y(0) - y(d.value))
+            .selection()
             .append("title")
                 .text(d => d.value + "g");
 
@@ -278,18 +300,21 @@ function createChart(){
         .join("rect")
             .attr("x", d => x(d.crop))
             .attr("y", y(0))
-            .attr("height", d => y(0) - y(-d.value))
+            .attr("height", 0)
             .attr("width", x.bandwidth())
             .attr("fill", "#FF7F7F")
+            .transition(transition)
+                .attr("height", d => y(0) - y(-d.value))
+            .selection()
             .append("title")
                 .text(d => d.value + "g");
 
     svg.append("g")
         .attr("transform", "translate(0," + y(0) + ")")
         .attr("class", "x-axis")
-        .call(d3.axisBottom(x))
+        .call(d3.axisBottom(x_crops))
         .selectAll("text")
-            .attr("transform", "translate(-13,10)rotate(-90)")
+            .attr("transform", "translate(-15,10)rotate(-70)")
             .style("text-anchor", "end")
 
     svg.append("g")
