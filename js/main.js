@@ -402,6 +402,14 @@ function loadData(){
     })
 }
 
+/**
+ * Processes the fish chances data into a more usable format
+ * @param {*} location 
+ * @param {*} season 
+ * @param {*} weather 
+ * @param {*} data 
+ * @returns 
+ */
 function processChancesData(location, season, weather, data){
     // variable to take into account: hours of the day, season, weather, location.
     // Fish chances of being caught depends on those
@@ -521,6 +529,10 @@ function addFishToList(){
         });
 }
 
+/**
+ * Highlights the zones where a fish can be caught
+ * @param {*} locations 
+ */
 function highlightFishingZones(locations){
     locations.forEach(location => {
         const polygon = polygons[`area${location.replace(/_/g, '')}`];
@@ -532,6 +544,10 @@ function highlightFishingZones(locations){
     });
 }
 
+/**
+ * Removes the highlight from the zones where a fish can be caught
+ * @param {*} locations 
+ */
 function unhighlightFishingZones(locations){
     locations.forEach(location => {
         const polygon = polygons[`area${location.replace(/_/g, '')}`];
@@ -560,14 +576,12 @@ function isInRange(hour, range){
     });
 }
 
-
+/**
+ * Checks if a fish matches all the selected filters
+ * @param {*} fish 
+ * @returns true if the fish matches all the selected filters
+ */
 function isFishMatch(fish){
-    // Change consditions for an OR condition
-    // const matchesArea = ctx.SELECTED_AREAS.length > 0 ? ctx.SELECTED_AREAS.some(area => fish.location.includes(area)) : true;
-    // const matchesSeason = ctx.SELECTED_SEASON.includes(fish.seasons);
-
-    // console.log( ctx.SELECTED_AREAS.some(area => fish.location.includes(area)));
-    // console.log(ctx.SELECTED_AREAS);
     const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
     const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
         return selected ? fish.seasons.includes(ctx.seasons[index]) : true;
@@ -581,6 +595,7 @@ function isFishMatch(fish){
 
 /**
  * Filters the list of fish based on the selected time, season, area and weather
+ * @param {*} searchTerm
  */
 function filterFish(searchTerm=""){
     const container = d3.select("#fishList");
@@ -976,7 +991,11 @@ function timeWheel(){
             .text(d => d.data.key);
 }
 
-
+/**
+ * Same as isFishMatch but without the time filter
+ * @param {*} fish 
+ * @returns true if the fish matches all the selected filters 
+ */
 function isFishMatchNoTime(fish){
     const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
     const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
@@ -1037,6 +1056,9 @@ function computeHourlyProfit(hour, season, locations, weather){
 
 /**
  * Creates a radar chart to display the hourly profit for each season
+ * @param {*} seasons the seasons to display the profit for
+ * @param {*} locations the locations to display the profit for
+ * @param {*} weather the weather to display the profit for
  */
 function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, weather=["Sun", "Rain"]){
     const times = ["600", "100", "0", "2300", "2200", "2100", "1900", "1800", "1700", "1600", "1500", "1400", "1300", "1200", "1100", "1000", "900", "800", "700"];
@@ -1184,7 +1206,9 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
     }
 }
 
-
+/**
+ * Updates the radar chart with the selected filters
+ */
 function updateRadarChart(){
     d3.select("#radarChart").select("svg").remove();
     let selectedSeason = ctx.seasons.map((season, index) => ctx.SELECTED_SEASON[index] ? season : null).filter(season => season);
@@ -1212,7 +1236,6 @@ function handleWeatherSelection(){
         updateRadarChart();
     });
 }
-
 
 function createXPDifficultyScatter(data){
     const margin = {top: 10, right: 30, bottom: 30, left: 60},
