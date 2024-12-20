@@ -1,10 +1,4 @@
 Time,0,138 Rainbow Trout,132 Bream,144 Pike,145 Sunfish,153 Green Algae,706 Shad
-0,Independent chance,0,0,0,0,0,0
-100,Independent chance,0,0,0,0,0,0
-200,Independent chance,0,0,0,0,0,0
-300,Independent chance,0,0,0,0,0,0
-400,Independent chance,0,0,0,0,0,0
-500,Independent chance,0,0,0,0,0,0
 600,Independent chance,0.41,0,0.46,0.51,0.36,0
 700,Independent chance,0.41,0,0.46,0.51,0.36,0
 800,Independent chance,0.41,0,0.46,0.51,0.36,0
@@ -23,3 +17,5 @@ Time,0,138 Rainbow Trout,132 Bream,144 Pike,145 Sunfish,153 Green Algae,706 Shad
 2100,Independent chance,0,0.51,0.46,0,0.36,0
 2200,Independent chance,0,0.51,0.46,0,0.36,0
 2300,Independent chance,0,0.51,0.46,0,0.36,0
+0,Independent chance,0,0.51,0.46,0,0.36,0
+100,Independent chance,0,0.51,0.46,0,0.36,0

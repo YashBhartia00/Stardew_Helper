@@ -1,10 +1,4 @@
 Time,0,145 Sunfish,143 Catfish,132 Bream,153 Green Algae,706 Shad,702 Chub
-0,Independent chance,0,0,0,0,0,0
-100,Independent chance,0,0,0,0,0,0
-200,Independent chance,0,0,0,0,0,0
-300,Independent chance,0,0,0,0,0,0
-400,Independent chance,0,0,0,0,0,0
-500,Independent chance,0,0,0,0,0,0
 600,Independent chance,0,0.5,0,0.4,0,0.55
 700,Independent chance,0,0.5,0,0.4,0,0.55
 800,Independent chance,0,0.5,0,0.4,0,0.55
@@ -23,3 +17,5 @@ Time,0,145 Sunfish,143 Catfish,132 Bream,153 Green Algae,706 Shad,702 Chub
 2100,Independent chance,0,0.5,0.55,0.4,0.44999999999999996,0.55
 2200,Independent chance,0,0.5,0.55,0.4,0.44999999999999996,0.55
 2300,Independent chance,0,0.5,0.55,0.4,0.44999999999999996,0.55
+0,Independent chance,0,0,0.55,0.4,0.44999999999999996,0.55
+100,Independent chance,0,0,0.55,0.4,0.44999999999999996,0.55

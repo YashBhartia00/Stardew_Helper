@@ -1,10 +1,4 @@
 Time,0,137 Smallmouth Bass,132 Bream,143 Catfish,145 Sunfish,153 Green Algae,706 Shad
-0,Independent chance,0,0,0,0,0,0
-100,Independent chance,0,0,0,0,0,0
-200,Independent chance,0,0,0,0,0,0
-300,Independent chance,0,0,0,0,0,0
-400,Independent chance,0,0,0,0,0,0
-500,Independent chance,0,0,0,0,0,0
 600,Independent chance,0.53,0,0.48000000000000004,0,0.38,0
 700,Independent chance,0.53,0,0.48000000000000004,0,0.38,0
 800,Independent chance,0.53,0,0.48000000000000004,0,0.38,0
@@ -23,3 +17,5 @@ Time,0,137 Smallmouth Bass,132 Bream,143 Catfish,145 Sunfish,153 Green Algae,706
 2100,Independent chance,0.53,0.53,0.48000000000000004,0,0.38,0.43
 2200,Independent chance,0.53,0.53,0.48000000000000004,0,0.38,0.43
 2300,Independent chance,0.53,0.53,0.48000000000000004,0,0.38,0.43
+0,Independent chance,0.53,0.53,0,0,0.38,0.43
+100,Independent chance,0.53,0.53,0,0,0.38,0.43

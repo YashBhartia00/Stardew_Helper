@@ -1,10 +1,4 @@
 Time,0,136 Largemouth Bass,140 Walleye,141 Perch,153 Green Algae,707 Lingcod,702 Chub,700 Bullhead,698 Sturgeon,269 Midnight Carp
-0,Independent chance,0,0,0,0,0,0,0,0,0
-100,Independent chance,0,0,0,0,0,0,0,0,0
-200,Independent chance,0,0,0,0,0,0,0,0,0
-300,Independent chance,0,0,0,0,0,0,0,0,0
-400,Independent chance,0,0,0,0,0,0,0,0,0
-500,Independent chance,0,0,0,0,0,0,0,0,0
 600,Independent chance,0.24,0,0.45,0.3,0.27,0.45,0.27999999999999997,0.21,0
 700,Independent chance,0.24,0,0.45,0.3,0.27,0.45,0.27999999999999997,0.21,0
 800,Independent chance,0.24,0,0.45,0.3,0.27,0.45,0.27999999999999997,0.21,0
@@ -23,3 +17,5 @@ Time,0,136 Largemouth Bass,140 Walleye,141 Perch,153 Green Algae,707 Lingcod,702
 2100,Independent chance,0,0.34,0.45,0.3,0.27,0.45,0.27999999999999997,0,0
 2200,Independent chance,0,0.34,0.45,0.3,0.27,0.45,0.27999999999999997,0,0.33
 2300,Independent chance,0,0.34,0.45,0.3,0.27,0.45,0.27999999999999997,0,0.33
+0,Independent chance,0,0.34,0.45,0.3,0.27,0.45,0.27999999999999997,0,0.33
+100,Independent chance,0,0.34,0.45,0.3,0.27,0.45,0.27999999999999997,0,0.33

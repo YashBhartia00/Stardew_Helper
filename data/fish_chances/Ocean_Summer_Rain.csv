@@ -1,10 +1,4 @@
 Time,0,128 Pufferfish,130 Tuna,146 Red Mullet,149 Octopus,150 Red Snapper,152 Seaweed,155 Super Cucumber,708 Halibut,708 Halibut,701 Tilapia,267 Flounder
-0,Independent chance,0,0,0,0,0,0,0,0,0,0,0
-100,Independent chance,0,0,0,0,0,0,0,0,0,0,0
-200,Independent chance,0,0,0,0,0,0,0,0,0,0,0
-300,Independent chance,0,0,0,0,0,0,0,0,0,0,0
-400,Independent chance,0,0,0,0,0,0,0,0,0,0,0
-500,Independent chance,0,0,0,0,0,0,0,0,0,0,0
 600,Independent chance,0,0.27,0.52,0.22,0.5700000000000001,0.42,0,0.52,0,0.52,0.27
 700,Independent chance,0,0.27,0.52,0.22,0.5700000000000001,0.42,0,0.52,0,0.52,0.27
 800,Independent chance,0,0.27,0.52,0.22,0.5700000000000001,0.42,0,0.52,0,0.52,0.27
@@ -23,3 +17,5 @@ Time,0,128 Pufferfish,130 Tuna,146 Red Mullet,149 Octopus,150 Red Snapper,152 Se
 2100,Independent chance,0,0,0,0,0,0.42,0.22,0,0.52,0,0
 2200,Independent chance,0,0,0,0,0,0.42,0.22,0,0.52,0,0
 2300,Independent chance,0,0,0,0,0,0.42,0.22,0,0.52,0,0
+0,Independent chance,0,0,0,0,0,0.42,0.22,0,0.52,0,0
+100,Independent chance,0,0,0,0,0,0.42,0.22,0,0.52,0,0
