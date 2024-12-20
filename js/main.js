@@ -1183,6 +1183,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
             let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
             coordinates.push(angleToCoordinate(angle, data_point[ft_name]));
         }
+        coordinates.push(coordinates[0]);
         return coordinates;
     }
 
@@ -1194,8 +1195,9 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                 .attr("d", line)
                 .attr("stroke-width", 2)
                 .attr("stroke", (d, i) => colors(seasons[i]))
-                .attr("fill", (d, i) => colors(seasons[i]))
-                .attr("fill-opacity", 0.2)
+                .attr("fill", "none")
+                .append("title")
+                .text((d, i) => seasons[i])
         );
 
     function formatTime(hour){
