@@ -13,6 +13,17 @@ const ctx = {
     isScatterPlot: false, // New flag to track current visualization
     ingredientCategories: [],
     selectedCategories: new Set(),
+    forceParams: {
+        linkDistance: 20,
+        linkStrength: 0.4,
+        chargeStrength: -20,
+        chargeDistanceMax: 300,
+        collisionRadius: d => getNodeSize(d) / 2 + 5,
+        centerStrength: 1,
+    },
+    useIngredientOpacity: true,
+    hideIngredientsInScatterplot: true,
+    ingredientOpacity: 0.2, // Control ingredient node opacity globally
 };
 
 // Define scale variables globally
@@ -21,8 +32,8 @@ let yScale;
 
 // Initialize SVG canvas
 function initSvg() {
-    ctx.width = 1200;
-    ctx.height = 720;
+    ctx.width = 1300;
+    ctx.height = 600;
     ctx.svg = d3.select('svg')
         .attr('width', ctx.width)
         .attr('height', ctx.height);
@@ -32,6 +43,30 @@ function initSvg() {
 function defineArrowMarkers() {
     // Remove the arrow marker definition
 }
+
+
+// Define the tooltip div globally
+const tooltip = d3.select('body').append('div')
+    .attr('class', 'tooltip')
+    .style('position', 'absolute')
+    .style('display', 'none')
+    .style('background', '#fff')
+    .style('border', '1px solid #ccc')
+    .style('padding', '5px')
+
+.on('mouseover', function(event, d) {
+    highlightNode(d);
+    tooltip.style('display', 'inline-block')
+        .html(getTooltipContent(d));
+})
+.on('mousemove', function(event) {
+    tooltip.style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY + 10) + 'px');
+})
+.on('mouseout', function() {
+    resetHighlight();
+    tooltip.style('display', 'none');
+});
 
 // Load recepie data
 function loadRecepieData(callback) {
@@ -53,6 +88,12 @@ function loadIngredientData(callback) {
                 ctx.ingredientCategories.push(d.type);
             }
         });
+
+        // Define color scale based on categories
+        ctx.typeColor = d3.scaleOrdinal()
+            .domain(ctx.ingredientCategories)
+            .range(d3.schemeCategory10);
+
         callback();
     });
 }
@@ -68,24 +109,31 @@ function loadMainData(callback) {
             }
             ctx.links.push({ source: d.ingredient, target: d.recepie, value: +d.amount });
         });
+        buildLinkedByIndex(); // Ensure linkedByIndex is built for highlighting
         callback();
     });
+}
+
+// Define applyForces function
+function applyForces() {
+    ctx.simulation
+        .force('link', d3.forceLink()
+            .id(d => d.id)
+            .distance(ctx.forceParams.linkDistance)
+            .strength(ctx.forceParams.linkStrength))
+        .force('charge', d3.forceManyBody()
+            .strength(ctx.forceParams.chargeStrength)
+            .distanceMax(ctx.forceParams.chargeDistanceMax))
+        .force('center', d3.forceCenter(ctx.width / 2, ctx.height / 2).strength(ctx.forceParams.centerStrength))
+        .force('collision', d3.forceCollide()
+            .radius(ctx.forceParams.collisionRadius));
 }
 
 // Create simulation
 function createSimulation() {
     ctx.simulation = d3.forceSimulation()
-        .force('link', d3.forceLink()
-            .id(d => d.id)
-            .distance(50)
-            .strength(2))
-        .force('charge', d3.forceManyBody()
-            .strength(-100)
-            .distanceMax(500))
-        .force('center', d3.forceCenter(ctx.width / 2, ctx.height / 2))
-        .force('collision', d3.forceCollide()
-            .radius(d => getNodeSize(d) / 2 + 5))
         .on('tick', ticked);
+    applyForces();
 }
 
 // Add zoom functionality
@@ -105,7 +153,7 @@ function createNodesAndLinks() {
     // Create empty link and node selections
     ctx.link = ctx.g.append('g')
         .attr('class', 'links')
-        .selectAll('line');
+        .selectAll('line')
 
     ctx.node = ctx.g.append('g')
         .attr('class', 'nodes')
@@ -137,7 +185,9 @@ function updateVisualization(filteredNodes, filteredLinks) {
 
     // Update links
     ctx.link = ctx.g.select('.links').selectAll('line')
-        .data(filteredLinks, d => `${d.source.id}->${d.target.id}`);
+        .data(filteredLinks, d => `${d.source.id}->${d.target.id}`)
+        .attr('stroke-width', d => d.value)
+        .attr('stroke', d => ctx.typeColor(d.source.type));
 
     // Remove old links
     ctx.link.exit().remove();
@@ -146,8 +196,8 @@ function updateVisualization(filteredNodes, filteredLinks) {
     const linkEnter = ctx.link.enter().append('line')
         .attr('class', 'link')
         .attr('stroke-width', d => d.value)
-        .attr('stroke', '#999')
-        .style('opacity', 0.6);
+        .attr('stroke', d => ctx.typeColor(d.source.type)) // Ensure link color matches ingredient category
+        .style('opacity', ctx.isScatterPlot ? 0 : 0.6); // Always 0 in scatterplot mode
 
     ctx.link = linkEnter.merge(ctx.link);
 
@@ -161,6 +211,15 @@ function updateVisualization(filteredNodes, filteredLinks) {
     // Add new nodes
     const nodeEnter = ctx.node.enter().append('g')
         .attr('class', 'node')
+        .style('opacity', d => {
+            if (ctx.isScatterPlot && ctx.hideIngredientsInScatterplot && d.group === 'ingredient') {
+                return 0;
+            } else if (ctx.useIngredientOpacity && d.group === 'ingredient') {
+                return 0.2;
+            } else {
+                return 1;
+            }
+        })
         .call(d3.drag()
             .on('start', dragstarted)
             .on('drag', dragged)
@@ -186,17 +245,25 @@ function updateVisualization(filteredNodes, filteredLinks) {
     ctx.node = nodeEnter.merge(ctx.node);
 
     // Update attributes and event listeners for all nodes
-    ctx.node.style('opacity', d => d.group === 'ingredient' ? 0.7 : 1)
+    ctx.node.style('opacity', d => d.group === 'ingredient' ? ctx.ingredientOpacity : 1)
         .on('mouseover', function(event, d) {
+            if (ctx.isScatterPlot && d.group === 'ingredient') return; // Prevent hover for ingredients in scatterplot mode
+            if (ctx.isScatterPlot && d.group === 'recepie') {
+                tooltip.style('display', 'inline-block')
+                    .html(getTooltipContent(d));
+                return;
+            }
             highlightNode(d);
             tooltip.style('display', 'inline-block')
                 .html(getTooltipContent(d));
         })
         .on('mousemove', function(event) {
+            if (ctx.isScatterPlot && d.group === 'ingredient') return; // Prevent hover for ingredients in scatterplot mode
             tooltip.style('left', (event.pageX + 10) + 'px')
                 .style('top', (event.pageY + 10) + 'px');
         })
         .on('mouseout', function() {
+            if (ctx.isScatterPlot && d.group === 'ingredient') return; // Prevent hover for ingredients in scatterplot mode
             resetHighlight();
             tooltip.style('display', 'none');
         });
@@ -208,7 +275,7 @@ function updateVisualization(filteredNodes, filteredLinks) {
 
     // If in scatter plot mode, update positions
     if (ctx.isScatterPlot) {
-        updateScatterPlotPositions();
+        updateScatterPlotPositions(filteredNodes);
     }
 }
 
@@ -223,7 +290,7 @@ function createScatterPlot() {
         .range([ctx.height - 100, 100]);
 
     // Update node positions
-    updateScatterPlotPositions();
+    updateScatterPlotPositions(ctx.nodes);
 
     // Hide links
     ctx.link.style('opacity', 0);
@@ -235,14 +302,63 @@ function createScatterPlot() {
         .alpha(0)
         .stop();
 
+    // Set ingredient opacity to 0 in scatter plot
+    ctx.ingredientOpacity = 0;
+    ctx.node.style('opacity', d => d.group === 'ingredient' ? ctx.ingredientOpacity : 1);
+
+    // Remove existing axes and labels
+    ctx.g.selectAll('.x-axis, .y-axis, .x-label, .y-label').remove();
+
+    // Add axes and labels to scatterplot
+    const xAxis = d3.axisBottom(xScale);
+    ctx.xAxisG = ctx.g.append('g')
+        .attr('class', 'x-axis')
+        .attr('transform', `translate(0, ${ctx.height - 100})`)
+        .call(xAxis);
+    ctx.xLabel = ctx.g.append('text')
+        .attr('class', 'x-label')
+        .attr('x', ctx.width / 2)
+        .attr('y', ctx.height - 60)
+        .attr('text-anchor', 'middle')
+        .text('Price');
+
+    const yAxis = d3.axisLeft(yScale);
+    ctx.yAxisG = ctx.g.append('g')
+        .attr('class', 'y-axis')
+        .attr('transform', 'translate(100, 0)')
+        .call(yAxis);
+    ctx.yLabel = ctx.g.append('text')
+        .attr('class', 'y-label y-label-button')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -ctx.height / 2)
+        .attr('y', 30)
+        .attr('text-anchor', 'middle')
+        .style('cursor', 'pointer')
+        .text('Health')
+        .on('click', function() {
+            setScatterYAxis('health');
+        });
+
+    ctx.yLabel2 = ctx.g.append('text')
+        .attr('class', 'y-label y-label-button')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -ctx.height / 2)
+        .attr('y', 55)
+        .attr('text-anchor', 'middle')
+        .style('cursor', 'pointer')
+        .text('Energy')
+        .on('click', function() {
+            setScatterYAxis('energy');
+        });
+
     ctx.isScatterPlot = true;
 }
 
 // New function to update positions in scatter plot mode
-function updateScatterPlotPositions() {
+function updateScatterPlotPositions(filteredNodes) {
     ctx.node.transition().duration(1000)
         .attr('transform', d => {
-            if (d.group === 'recepie') {
+            if (d.group === 'recepie' && filteredNodes[d.id]) {
                 const recepieInfo = ctx.recepieData.find(r => r.name === d.id);
                 d.fx = xScale(+recepieInfo.price);
                 d.fy = yScale(+recepieInfo.health);
@@ -281,46 +397,13 @@ function init() {
     });
 }
 
-// Add a button to run the link overlap reduction algorithm
-d3.select('#reduceOverlapButton').on('click', function() {
-    reduceLinkOverlaps();
-});
-
-// Implement the algorithm to reduce link overlaps
-function reduceLinkOverlaps() {
-    // Stop the simulation
-    ctx.simulation.stop();
-
-    // Simple algorithm to adjust node positions
-    const iterations = 10; // Number of iterations for adjustment
-    for (let i = 0; i < iterations; i++) {
-        ctx.nodesArray.forEach(node => {
-            let overlap = false;
-            ctx.nodesArray.forEach(otherNode => {
-                if (node !== otherNode) {
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    const minDistance = (getNodeSize(node) + getNodeSize(otherNode)) / 2;
-                    if (distance < minDistance) {
-                        overlap = true;
-                        // Adjust positions to reduce overlap
-                        node.x += dx / distance * (minDistance - distance) * 0.1;
-                        node.y += dy / distance * (minDistance - distance) * 0.1;
-                    }
-                }
-            });
-        });
-    }
-
-    // Restart the simulation
-    ctx.simulation.alpha(0.5).restart();
-}
-
 // Create category filter buttons
 function createIngredientCategoryFilterButtons() {
     const buttonContainer = d3.select('#categoryFilterButtons');
     ctx.ingredientCategories.forEach(category => {
         const button = buttonContainer.append('button')
             .attr('class', 'category-filter-button active') // Add 'active' class
+            .style('background-color', ctx.typeColor(category)) // Set button color
             .text(category)
             .on('click', function() {
                 toggleCategoryFilter(category, d3.select(this));
@@ -381,7 +464,7 @@ function filterByIngredientCategories() {
     });
 
     // Update visualization with filtered nodes and links
-    updateVisualization(filteredNodes, filteredLinks);
+    updateVisualization(filteredNodes, ctx.isScatterPlot ? [] : filteredLinks); // Pass empty links array in scatterplot mode
 }
 
 // Helper function to get tooltip content
@@ -402,10 +485,24 @@ function getNodeSize(d) {
 // Update positions on each tick
 function ticked() {
     if (ctx.node) { // Ensure ctx.node is defined
-        // Constrain nodes within boundaries
+        const radius = Math.min(ctx.width, ctx.height) / 2;
+        const centerX = ctx.width / 2;
+        const centerY = ctx.height / 2;
+
         ctx.node.attr('transform', d => {
-            d.x = Math.max(0, Math.min(ctx.width, d.x));
-            d.y = Math.max(0, Math.min(ctx.height, d.y));
+            // const dx = d.x - centerX;
+            // const dy = d.y - centerY;
+            // const distance = Math.sqrt(dx * dx + dy * dy);
+            // if (distance > radius - getNodeSize(d) / 2) {
+            //     const angle = Math.atan2(dy, dx);
+            //     d.x = centerX + (radius - getNodeSize(d) / 2) * Math.cos(angle);
+            //     d.y = centerY + (radius - getNodeSize(d) / 2) * Math.sin(angle);
+            // }
+
+            //keep withing svg bounds rectangle
+            d.x = Math.max(getNodeSize(d) / 2, Math.min(ctx.width - getNodeSize(d) / 2, d.x));
+            d.y = Math.max(getNodeSize(d) / 2, Math.min(ctx.height - getNodeSize(d) / 2, d.y));
+
             return `translate(${d.x},${d.y})`;
         });
 
@@ -442,7 +539,7 @@ function highlightNode(d) {
 }
 
 function resetHighlight() {
-    ctx.node.style('opacity', d => d.group === 'ingredient' ? 0.7 : 1);
+    ctx.node.style('opacity', d => d.group === 'ingredient' ? ctx.ingredientOpacity : 1);
     ctx.link.style('opacity', 0.6);
 }
 
@@ -460,7 +557,9 @@ function buildLinkedByIndex() {
 
 // Transition back to force-directed graph
 function createForceDirectedGraph() {
-    // Remove fixed positions
+    // Remove axes from ctx.g instead of ctx.svg
+    ctx.g.selectAll('.x-axis, .y-axis, .x-label, .y-label').remove();
+
     ctx.node.each(d => {
         d.fx = null;
         d.fy = null;
@@ -470,15 +569,17 @@ function createForceDirectedGraph() {
     ctx.link.transition().duration(1000)
         .style('opacity', 0.6);
 
-    // Restart simulation
-    ctx.simulation.force('link', d3.forceLink().id(d => d.id).distance(100))
-        .force('charge', d3.forceManyBody().strength(-400))
-        .force('center', d3.forceCenter(ctx.width / 2, ctx.height / 2))
-        .force('collision', d3.forceCollide().radius(25))
-        .alpha(1)
-        .restart();
+    // Apply forces
+    applyForces();
 
+    // Reset ingredient opacity when switching back
+    ctx.ingredientOpacity = 0.2;
+    ctx.node.style('opacity', d => d.group === 'ingredient' ? ctx.ingredientOpacity : 1);
+
+    // Restart simulation
+    ctx.simulation.alpha(1).restart();
     ctx.isScatterPlot = false;
+    updateVisualization(ctx.nodes, ctx.links);
 }
 
 // Add CSS styles for the filter buttons
@@ -488,8 +589,15 @@ d3.select('head').append('style').text(`
         padding: 5px 10px;
     }
     .category-filter-button.active {
-        background-color: #4CAF50;
         color: white;
     }
 `);
+
+function setScatterYAxis(metric) {
+    yScale.domain(d3.extent(ctx.recepieData, d => +d[metric]));
+    ctx.yAxisG.transition().call(d3.axisLeft(yScale));
+    ctx.yLabel.text(metric.charAt(0).toUpperCase() + metric.slice(1));
+    updateScatterPlotPositions(ctx.nodes);
+}
+
 init();
