@@ -257,6 +257,7 @@ function setPolygons(){
             }
 
             filterFish();
+            updateRadarChart();
 
         });
 
@@ -911,6 +912,7 @@ function timeWheel(){
                 d3.select(this).style("opacity", ctx.SELECTED_SEASON[index] ? 0.7 : 1);
                 ctx.SELECTED_SEASON[index] = !ctx.SELECTED_SEASON[index];
                 filterFish();
+                updateRadarChart();
             })
 
     // Draw times
@@ -980,11 +982,13 @@ function timeWheel(){
  * @param {*} season the season to compute the profit for
  * @returns the hourly profit
  */
-function computeHourlyProfit(hour, season){
+function computeHourlyProfit(hour, season, locations=ctx.locations, weather=["Sun", "Rain"]){
+    // TODO: modify formula dividing by number of fishes in the location
+    // total multipled by fishesPerHour
     let total = 0;
     const fishPerHour = 2; // A player can fish about 2 fishes per game hour
-    ctx.locations.forEach(location => {
-        ["Sun", "Rain"].forEach(weather => {
+    locations.forEach(location => {
+        weather.forEach(weather => {
             if(location == "The_Desert" || location == "Mountain_Lake" && (season == "Fall" || season == "Spring")) return; // No data for these locations yet
             let chances = ctx.fish_chances[location + "_" + season + "_" + weather];
             chances = chances[hour];
@@ -1003,43 +1007,29 @@ function computeHourlyProfit(hour, season){
             total += profit;
         });
     })
-    // console.log("data rain", data_rain, season);
-    // Object.values(files).forEach(file => {
-    //     const chances = ctx.fish_chances[file];
-    //     if(!chances) return;
 
-    //     chances.forEach(fish => {
-
-    //     })
-    // })
     return total; // Placeholder
 }
 
 /**
  * Creates a radar chart to display the hourly profit for each season
  */
-function fishAveragePricePerTime(){
-    const times = d3.range(6, 26).map(hour => `${hour}00`);
-    times[18] = "0";
-    times[19] = "100";
-
-
+function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, weather=["Sun", "Rain"]){
+    const times = ["600", "100", "0", "2300", "2200", "2100", "1900", "1800", "1700", "1600", "1500", "1400", "1300", "1200", "1100", "1000", "900", "800", "700"];
     console.log(times);
 
-    const seasons = ctx.seasons;
     const data = [];
     seasons.forEach(season => {
         point = {}
         times.forEach(hour => {
             const gameHour = parseInt(hour);
-            point[hour] = computeHourlyProfit(gameHour, season);
+            point[hour] = computeHourlyProfit(gameHour, season, locations, weather);
         });
         data.push(point);
     });
     console.log(data);
 
     maxValue = d3.max(data.map(season => d3.max(Object.values(season))));
-    
     let width = 600;
     let height = 600;
     let svg = d3.select("#radarChart").append("svg")
@@ -1085,7 +1075,7 @@ function fishAveragePricePerTime(){
     // Plot axes
     const features = times;
     const featureData = features.map((d, i) => {
-        let angle = (Math.PI/2) - (2 * Math.PI * i / features.length);
+        let angle = (Math.PI/2) + (2 * Math.PI * i / features.length);
         return {
             name: d,
             angle: angle,
@@ -1127,11 +1117,9 @@ function fishAveragePricePerTime(){
                         return "0.5em";
                     } else {
                         return "-0.5em";
-                    }
-                        
+                    }   
                 })
                 .text(d => d.name)
-                
         )
 
     let line = d3.line()
@@ -1144,7 +1132,7 @@ function fishAveragePricePerTime(){
         let coordinates = [];
         for (var i = 0; i < features.length; i++){
             let ft_name = features[i].toString();
-            let angle = (Math.PI / 2) - (2 * Math.PI * i / features.length);
+            let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
             coordinates.push(angleToCoordinate(angle, data_point[ft_name]));
         }
         return coordinates;
@@ -1163,6 +1151,17 @@ function fishAveragePricePerTime(){
         );
 }
 
+function updateRadarChart(){
+    d3.select("#radarChart").select("svg").remove();
+    let selectedSeason = ctx.seasons.map((season, index) => ctx.SELECTED_SEASON[index] ? season : null).filter(season => season);
+    if (selectedSeason.length == 0) selectedSeason = ctx.seasons;
+    let selectedAreas = ctx.SELECTED_AREAS;
+    if (selectedAreas.length == 0) selectedAreas = ctx.locations;
+    let selectedWeather = [ctx.SELECTED_WEATHER];
+    if(ctx.SELECTED_WEATHER == "Any") selectedWeather = ["Sun", "Rain"];
+    fishAveragePricePerTime(selectedSeason, selectedAreas);
+}
+
 
 function handleWeatherSelection(){
     d3.selectAll(".weather-btn").on("click", function(){
@@ -1176,6 +1175,7 @@ function handleWeatherSelection(){
             d3.select(this).classed("selected", true);
         }
         filterFish();
+        updateRadarChart();
     });
 }
 /**
