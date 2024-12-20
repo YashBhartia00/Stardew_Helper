@@ -1128,7 +1128,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                         return "-0.5em";
                     }   
                 })
-                .text(d => d.name)
+                .text(d =>  formatTime(d.name))
         )
 
     let line = d3.line()
@@ -1158,6 +1158,13 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
                 .attr("fill", (d, i) => colors(i))
                 .attr("fill-opacity", 0.2)
         );
+}
+
+function formatTime(hour){
+    const hourInt = parseInt(hour);
+    const formattedHour = hourInt%2400;
+    const hourPart = Math.floor(formattedHour / 100);
+    return `${hourPart}:00`;
 }
 
 function updateRadarChart(){
