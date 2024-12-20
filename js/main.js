@@ -672,7 +672,8 @@ function displayFishInfo(fish){
         { label: "Time", value: fish.times },
         { label: "Season", value: fish.seasons.join(", ") },
         { label: "Weather", value: fish.weather },
-        { label: "Base XP", value: fish.baseXP }
+        { label: "Base XP", value: fish.baseXP },
+        { label: "Base Price", value: fish.basePrice + "g"}
     ]
 
 
@@ -1046,12 +1047,12 @@ function computeHourlyProfit(hour, season, locations, weather){
                 }
             })
             if(profit > 0)
-                total += profit / fishCount * fishPerHour;
+                total += (profit / fishCount) * fishPerHour;
         });
-        if(location == "Secret_Woods_Pond") console.log("total", total);
     })
 
-    return total; // Placeholder
+    // total = total / (locations.length);
+    return total; 
 }
 
 /**
