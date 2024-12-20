@@ -1023,7 +1023,6 @@ function fishAveragePricePerTime(){
     times[18] = "0";
     times[19] = "100";
 
-    times.reverse();
 
     console.log(times);
 
@@ -1037,6 +1036,7 @@ function fishAveragePricePerTime(){
         });
         data.push(point);
     });
+    console.log(data);
 
     maxValue = d3.max(data.map(season => d3.max(Object.values(season))));
     
@@ -1085,7 +1085,7 @@ function fishAveragePricePerTime(){
     // Plot axes
     const features = times;
     const featureData = features.map((d, i) => {
-        let angle = (Math.PI/2) + (2 * Math.PI * i / features.length);
+        let angle = (Math.PI/2) - (2 * Math.PI * i / features.length);
         return {
             name: d,
             angle: angle,
@@ -1144,7 +1144,7 @@ function fishAveragePricePerTime(){
         let coordinates = [];
         for (var i = 0; i < features.length; i++){
             let ft_name = features[i].toString();
-            let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
+            let angle = (Math.PI / 2) - (2 * Math.PI * i / features.length);
             coordinates.push(angleToCoordinate(angle, data_point[ft_name]));
         }
         return coordinates;
