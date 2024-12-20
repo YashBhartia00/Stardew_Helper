@@ -63,6 +63,10 @@ html, body {
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
+#fishVisu p {
+    font-size: 25px;
+}
+
 
 /* Map */
 #mapContainer {
@@ -333,7 +337,7 @@ html, body {
 
 
 #fishImageContainer {
-    background-color: antiquewhite;
+    /* background-color: antiquewhite; */
     display: flex;
     align-items: center;
     flex-direction: row;
