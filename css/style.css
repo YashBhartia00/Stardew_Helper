@@ -89,11 +89,16 @@ html, body {
     cursor: pointer;
     width: 100px;
     text-align: center;
-    float: right;
+    align-self: flex-end;
+    margin-top: auto;
+}
+
+#reset:hover {
+    background-color: #e04848;
 }
 
 .weather-filter div{
-    background-color: #bebebe;
+    background-color: #e8e8e8;
     padding: 10px;
     border-radius: 25px;
     cursor: pointer;
@@ -110,28 +115,8 @@ html, body {
     justify-content: center;
 }
 
-/* .weather-selector {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    align-items: center;
-    padding: 10px;
-    justify-content: center;
-}
-
-.weather-btn {
-    padding: 10px;
-    width: 80px;
-    border: 2px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
-    text-align: center;
-    background: white;
-    font-size: 16px;
-}*/
-
 .weather-btn:hover {
-    background: #d8d8d8;
+    background-color:#bebebe;
 }
 
 .weather-btn[data-weather="Sun"].selected {
@@ -147,17 +132,27 @@ html, body {
 #filters{
     width: 100%;
     height: calc(40% - 20px);
-    /* display: flex;
-    align-items: center;
-    gap: 20px;
-    justify-content: center;
-    flex-direction: column; */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+}
+
+#filters p {
+    font-size: 25px;
+    margin-top: 0;
 }
 
 
 #radarChart {
     width: 100%;
     height: 100%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 #scatterplot {
@@ -213,8 +208,12 @@ html, body {
     text-decoration: none; /* Remove default text underline */
     font-size: 18px; /* Increase the font-size */
     color: black; /* Add a black text color */
-    display: block; /* Make it into a block element to fill the whole list */
     max-width: 170px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    cursor: pointer;
+    gap: 10px;
 }
 
 #fishList li:first-child {
@@ -223,6 +222,10 @@ html, body {
 
 #fishList li:hover{
     background-color: #f1f1f1; /* Add a hover effect to the list */
+}
+
+#fishList li img {
+    width: 25px;
 }
 
 

@@ -185,13 +185,13 @@ function setPolygons(){
     ]
 
     const areas = {
-        areaSea: areaSeaRelative,
-        areaLake: areaLakeRelative,
-        areaTownRiver: areaTownRiverRelative,
+        areaOcean: areaSeaRelative,
+        areaMountainLake: areaLakeRelative,
+        areaRiverTown: areaTownRiverRelative,
         areaForestRiver: areaForestRiverRelative,
-        areaPond: areaPondRelative,
-        areaDesert: areaDesertRelative,
-        areaSecretWoods: areaSecretWoodsRelative
+        areaForestPond: areaPondRelative,
+        areaTheDesert: areaDesertRelative,
+        areaSecretWoodsPond: areaSecretWoodsRelative
     };
 
     // Remove existing polygons if they exist
@@ -205,13 +205,13 @@ function setPolygons(){
     Object.keys(areas).forEach(key => {
         const absoluteCoords = convertRelativeToAbsolute(areas[key]);
         let locationKey;
-        if(key === "areaSea") locationKey = "Ocean";
-        else if(key === "areaLake") locationKey = "Mountain_Lake";
-        else if(key === "areaTownRiver") locationKey = "River_Town";
+        if(key === "areaOcean") locationKey = "Ocean";
+        else if(key === "areaMountainLake") locationKey = "Mountain_Lake";
+        else if(key === "areaRiverTown") locationKey = "River_Town";
         else if(key === "areaForestRiver") locationKey = "River_Forest";
-        else if(key === "areaPond") locationKey = "Forest_Pond";
-        else if(key === "areaDesert") locationKey = "The_Desert";
-        else if(key === "areaSecretWoods") locationKey = "Secret_Woods_Pond";
+        else if(key === "areaForestPond") locationKey = "Forest_Pond";
+        else if(key === "areaTheDesert") locationKey = "The_Desert";
+        else if(key === "areaSecretWoodsPond") locationKey = "Secret_Woods_Pond";
         polygons[key] = L.polygon(absoluteCoords, {
             color: 'white',
             fillColor: 'white',
@@ -332,6 +332,10 @@ function createViz(){
         ctx.SELECTED_WEATHER = "Any";
         d3.selectAll(".weather-btn").classed("selected", false);
         document.getElementById("fishSearch").value = "";
+
+        d3.selectAll("path.season").style("opacity", 0.3);
+        d3.selectAll("path.time").style("opacity", 0.3);
+
         filterFish();
     });
 }
@@ -346,33 +350,15 @@ function loadData(){
         "data/fish_detail.csv",
         "data/fish_price_breakdown.csv",
         "data/crabpotandothercatchables.csv",
-        "data/fish_chances/Beach_(Spring).csv",
-        "data/fish_chances/Beach_(Summer).csv",
-        "data/fish_chances/Beach_(Fall).csv",
-        "data/fish_chances/Beach_(Winter).csv",
-        "data/fish_chances/Forest_Lake_(Spring).csv",
-        "data/fish_chances/Forest_Lake_(Summer).csv",
-        "data/fish_chances/Forest_Lake_(Fall).csv",
-        "data/fish_chances/Forest_Lake_(Winter).csv",
-        "data/fish_chances/Forest_River_(Spring).csv",
-        "data/fish_chances/Forest_River_(Summer).csv",
-        "data/fish_chances/Forest_River_(Fall).csv",
-        "data/fish_chances/Forest_River_(Winter).csv",
-        "data/fish_chances/Mountain_(Spring).csv",
-        "data/fish_chances/Mountain_(Summer).csv",
-        "data/fish_chances/Mountain_(Fall).csv",
-        "data/fish_chances/Mountain_(Winter).csv",
-        "data/fish_chances/Town_(Spring).csv",
-        "data/fish_chances/Town_(Summer).csv",
-        "data/fish_chances/Town_(Fall).csv",
-        "data/fish_chances/Town_(Winter).csv",
-        
+        "data/fish_chances/beach_winter_rain.csv"
     ]
 
     let promises = files.map(url => d3.csv(url))
     Promise.all(promises).then(function(data){
+        console.log(data[3]);
         processFishData(data[0]);
         addFishToList();
+        processChancesData("beach", "winter", "rain");
         ctx.fish_price_breakdown = data[1];
         ctx.fish_detail = data[0];
 
@@ -382,8 +368,27 @@ function loadData(){
             ctx.fish_chances[files[i]] = data[i];
         }
         fishAveragePricePerTime();
-        createXPDifficultyScatter(ctx.FISH_DATA);
+        // createXPDifficultyScatter(ctx.FISH_DATA);
     })
+}
+
+function processChancesData(location, season, weather){
+    // variable to take into account: hours of the day, season, weather, location.
+    // Fish chances of being caught depends on those
+    d3.csv("data/fish_chances/" + location + "_" + season + "_" + weather + ".csv").then(function(data){
+        let chances = {}
+        data.forEach(row => {
+            let time = row.Time;
+            chances[time] = {};
+
+            for(let i = 2 ; i < data.columns.length; i++){
+                let fish = data.columns[i];
+                chances[time][fish.replace(/\d+/g, "").trim()] = parseFloat(row[fish]);
+            }
+        });
+        console.log(chances);
+        return chances;
+    });
 }
 
 /**
@@ -464,14 +469,49 @@ function processFishData(data){
  */
 function addFishToList(){
     const container = d3.select("#fishList");
+    let data = ctx.FISH_DATA.sort((a, b) => a.name.localeCompare(b.name));
     container.selectAll("li")
         .data(ctx.FISH_DATA)
         .enter()
         .append("li")
-        .text(d => d.name)
+        .each(function(d){
+            const li = d3.select(this);
+            li.append("img")
+                .attr("src", `data/images/fish/${d.name.replace(/ /g, "_")}.png`);
+            li.append("span")
+                .text(d.name);
+        })
         .on("click", function(event, fish){
             displayFishInfo(fish);
+        })
+        .on("mouseover", function(event, fish){
+            highlightFishingZones(fish.location);
+        })
+        .on("mouseout", function(event, fish){
+            unhighlightFishingZones(fish.location);
         });
+}
+
+function highlightFishingZones(locations){
+    locations.forEach(location => {
+        const polygon = polygons[`area${location.replace(/_/g, '')}`];
+        if(polygon){
+            polygon.setStyle({
+                color: "red"
+            });
+        }
+    });
+}
+
+function unhighlightFishingZones(locations){
+    locations.forEach(location => {
+        const polygon = polygons[`area${location.replace(/_/g, '')}`];
+        if(polygon){
+            polygon.setStyle({
+                color: "white"
+            });
+        }
+    });
 }
 
 /**
@@ -493,7 +533,6 @@ function isInRange(hour, range){
 
 
 function isFishMatch(fish){
-    const seasons = ["Spring", "Summer", "Fall", "Winter"];
     const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
     const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
         return selected ? fish.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
@@ -521,7 +560,7 @@ function filterFish(searchTerm=""){
     container.selectAll("li")
         .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
 
-    createXPDifficultyScatter(finalFilteredData);
+    // createXPDifficultyScatter(finalFilteredData);
 
 
 }
@@ -585,9 +624,9 @@ function displayFishInfo(fish){
     const tbody = table.append("tbody");
 
     const info = [
-        { label: "Location", value: fish.location },
+        { label: "Location", value: fish.location.map(l => l.replace(/_/g, " ")).join(", ") },
         { label: "Time", value: fish.times },
-        { label: "Season", value: fish.seasons },
+        { label: "Season", value: fish.seasons.join(", ") },
         { label: "Weather", value: fish.weather },
         { label: "Base XP", value: fish.baseXP }
     ]
@@ -599,7 +638,7 @@ function displayFishInfo(fish){
         row.append("td").text(i.value);
     });
 
-    // Add price breakdown in grouped bar chart, price depending on quality. different bars represent profession
+    // // Add price breakdown in grouped bar chart, price depending on quality. different bars represent profession
     // const priceBreakdown = rightSection.append("div")
     //     .attr("id", "priceBreakdown");
     // priceBarChart("#priceBreakdown", fish.Name);
@@ -825,7 +864,7 @@ function timeWheel(){
             .attr("fill", d => colorSeason(d.data.key))
             .attr("stroke", "white")
             .style("stroke-width", "2px")
-            .style("opacity", 0.5)
+            .style("opacity", 0.3)
             .on("mouseover", function(){
                 d3.select(this).style("opacity", 1);
             })
@@ -833,7 +872,7 @@ function timeWheel(){
                 const season = d3.select(this).data()[0].data.key;
                 const index = seasons.indexOf(season);
                 if(!ctx.SELECTED_SEASON[index]){
-                    d3.select(this).style("opacity", 0.7);
+                    d3.select(this).style("opacity", 0.3);
                 }
             })
             .on("click", function(){
@@ -853,10 +892,10 @@ function timeWheel(){
         .append("path")
             .attr("class", "time")
             .attr("d", outerArc)
-            .attr("fill", "#73C2FB")
+            .attr("fill", "#bebebe")
             .attr("stroke", "white")
             .style("stroke-width", "2px")
-            .style("opacity", 0.7)
+            .style("opacity", 0.3)
             .on("mouseover", function(){
                 d3.select(this).style("opacity", 1);
             })
@@ -864,7 +903,7 @@ function timeWheel(){
                 const time = d3.select(this).data()[0].data.key;
                 const index = times.indexOf(time);
                 if(!ctx.SELECTED_TIME[index]){
-                    d3.select(this).style("opacity", 0.7);
+                    d3.select(this).style("opacity", 0.3);
                 }
             })
             .on("click", function(){
@@ -908,21 +947,17 @@ function timeWheel(){
 }
 
 /**
- * Computes the hourly possible profit for a given hour and season
+ * Computes the hourly possible profit for a given hour, season, weather
  * @param {*} hour  the hour to compute the profit for
  * @param {*} season the season to compute the profit for
+ * @param {*} weather the weather to compute the profit for
  * @returns the hourly profit
  */
-function computeHourlyProfit(hour, season){
+function computeHourlyProfit(hour, season, weather){
     let total = 0;
-    const fishPerHour = 2;
-    const files = {
-        "Beach": "data/fish_chances/Beach_{season}.csv",
-        "Forest lake": "data/fish_chances/Forest_Lake_{season}.csv",
-        "Forest river": "data/fish_chances/Forest_River_{season}.csv",
-        "Mountain": "data/fish_chances/Mountain_{season}.csv",
-        "Town": "data/fish_chances/Town_{season}.csv",
-    }
+    const fishPerHour = 2; // A player can fish about 2 fishes per game hour
+
+
 
     // Object.values(files).forEach(file => {
     //     const chances = ctx.fish_chances[file];
@@ -939,7 +974,7 @@ function computeHourlyProfit(hour, season){
  * Creates a radar chart to display the hourly profit for each season
  */
 function fishAveragePricePerTime(){
-    const times = d3.range(6, 27).map(hour => `${hour}`);
+    const times = d3.range(6, 26).map(hour => `${hour}`);
     const seasons = ["Spring", "Summer", "Fall", "Winter"];
     const data = [];
     seasons.forEach(season => {
@@ -956,8 +991,8 @@ function fishAveragePricePerTime(){
     });
 
     const config = {
-        w: 300,
-        h: 300,
+        w: 250,
+        h: 250,
         margin: {top: 50, right: 50, bottom: 50, left: 50},
 		maxValue: 0.5,
 		levels: 5,
@@ -1059,7 +1094,7 @@ function createXPDifficultyScatter(data){
     .call(d3.axisLeft(y));
 
     // Add dots
-    svg.append('g')
+    let dots = svg.append('g')
     .selectAll("dot")
     .data(data)
     .join("circle")
@@ -1068,21 +1103,29 @@ function createXPDifficultyScatter(data){
         .attr("cy", d => y(d.baseXP) )
         .attr("r", 2)
         .style("fill", "#69b3a2")
-        .append("title")
-            .text(d => d.name + ": " + d.baseXP + " XP");
+    dots.append("title")
+        .text(d => d.name + ": " + d.baseXP + " XP");
 
-    // // Add images
-    // svg.append('g')
-    //     .selectAll("image")
-    //     .data(data)
-    //     .join("image")
-    //         .attr("xlink:href", d => `data/images/fish/${d.name.replace(/ /g, "_")}.png`)
-    //         .attr("x", d => x(d.difficulty) - 7.5)
-    //         .attr("y", d => y(d.baseXP) - 7.5)
-    //         .attr("width", 15)
-    //         .attr("height", 15)
-    //         .append("title")
-    //             .text(d => d.name + ": " + d.baseXP + " XP");
+    // Add images
+    let images = svg.append('g')
+        .selectAll("image")
+        .data(data)
+        .join("image")
+            .attr("xlink:href", d => `data/images/fish/${d.name.replace(/ /g, "_")}.png`)
+            .attr("x", d => x(d.difficulty) - 7.5)
+            .attr("y", d => y(d.baseXP) - 7.5)
+            .attr("width", 15)
+            .attr("height", 15)
+            .style("display", "none")
+        images.append("title")
+                .text(d => d.name + ": " + d.baseXP + " XP");
+
+    d3.select("#toggleFish").on("click", function(){
+        const isDotVisible = dots.style("display") != "none";
+        dots.style("display", isDotVisible ? "none" : null);
+        images.style("display", isDotVisible ? null : "none");
+        d3.select(this).text(isDotVisible ? "Switch to Points" : "Switch to Images");
+    });
 }
 
 

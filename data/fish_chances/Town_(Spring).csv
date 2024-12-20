@@ -1,8 +1,0 @@
-Begin Rod,Weather,Time,Level,,difficulty,motionType,minFishSize,maxFishSize,time,season(ignored),weather,favourite bait(not used),Optimal depth,base chance?,depth penalty?,req level,,,RNG,,,,Water depth,5,Weather,Rainy,Recalc Y ->
-,,First Pair Only,,0,1,2,3,4,5,6,7,8,9,10,11,12,num1,num2,num3,Independent chance,Curiosity Chance,,Fishing level,4,Time,1200,
-1,1,1,1,137 Smallmouth Bass,28,mixed,12,24,600 2600,spring fall,both,682 .2,1,0.45,0.1,0,0.45,0.045,0.53,53.00%,53.00%,27.53%,Curiorisy Lure,N,Train Rod,N,
-1,1,0,1,132 Bream,35,smooth,12,30,1800 2600,spring summer fall winter,both,684 .35,1,0.45,0.1,0,0.45,0.045,0.53,0.00%,0.00%,0.00%,,,Total Chance,91.36%,
-1,1,1,1,143 Catfish,75,mixed,12,72,600 2400,spring fall winter,rainy,689 .4 680 .1,4,0.4,0.1,0,0.4,0.04,0.48,48.00%,48.00%,24.28%,,,,,
-1,0,1,1,145 Sunfish,30,mixed,5,15,600 1900,spring summer,sunny,683 .2,1,0.45,0.1,0,0.45,0.045,0.53,0.00%,0.00%,0.00%,,,,,
-1,1,1,1,153 Green Algae,5,floater,5,30,600 2600,spring summer fall winter,both,-1,0,0.3,0,0,0.3,0,0.38,38.00%,38.00%,18.32%,,,,,
-1,1,1,1,706 Shad,45,smooth,20,48,900 2600,spring summer fall,rainy,684 .35,2,0.35,0.2,0,0.35,0.07,0.43,43.00%,43.00%,21.22%,,,,,

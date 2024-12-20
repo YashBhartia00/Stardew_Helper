@@ -1,9 +1,0 @@
-Begin Rod,Weather,Time,Level,,difficulty,motionType,minFishSize,maxFishSize,time,season(ignored),weather,favourite bait(not used),Optimal depth,base chance?,depth penalty?,req level,,,RNG,,,,Water depth,5,Weather,Rainy,Recalc Y ->
-,,First Pair Only,,0,1,2,3,4,5,6,7,8,9,10,11,12,num1,num2,num3,Independent chance,Curiosity Chance,,Fishing level,0,Time,2400,
-1,1,0,1,136 Largemouth Bass,50,mixed,11,30,600 1900,spring summer fall winter,both,685 .35,3,0.4,0.2,0,0.4,0.08,0.4,0.00%,0.00%,0.00%,Curiorisy Lure,N,Train Rod,N,
-1,1,1,1,140 Walleye,45,smooth,10,40,1200 2600,fall winter,rainy,680 .35,2,0.4,0.15,0,0.4,0.06,0.4,40.00%,40.00%,16.63%,,,Total Chance,94.47%,
-1,1,1,1,142 Carp,15,mixed,15,50,600 2600,spring summer fall,both,682 .2,1,0.45,0.1,0,0.45,0.045,0.45,45.00%,45.00%,19.12%,,,,,
-1,1,1,1,153 Green Algae,5,floater,5,30,600 2600,spring summer fall winter,both,-1,0,0.3,0,0,0.3,0,0.3,30.00%,30.00%,11.99%,,,,,
-1,1,1,1,702 Chub,35,dart,12,24,600 2600,spring summer fall winter,both,684 .35,1,0.45,0.1,0,0.45,0.045,0.45,45.00%,45.00%,19.12%,,,,,
-1,1,1,1,700 Bullhead,46,smooth,12,30,600 2600,spring summer fall winter,both,681 .25,2,0.35,0.2,0,0.35,0.07,0.35,35.00%,35.00%,14.26%,,,,,
-1,1,1,1,269 Midnight Carp,55,mixed,12,52,2200 2600,fall winter,both,682 .2,1,0.33,0.1,0,0.33,0.033,0.33,33.00%,33.00%,13.34%,,,,,

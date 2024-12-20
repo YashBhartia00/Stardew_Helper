@@ -82,6 +82,12 @@ function getNextSeason(curr_season){
 }
 
 function computeProfit(crop, current_day){
+    // The general formula is: Minimum Gold per Day = ((Max Harvests × Sell Price per Harvest) − Seed Price) / Growing Days
+    // Growing Days = Days to Maturity + ((Max Harvests − 1) × Days to Regrow)
+    // Days to Maturity and Days to Regrow are listed in each table.
+    // Max Harvests is normally 1, but for crops that continue to produce, it is the actual number of harvests that can be obtained in the growing season(s).
+    // Sell Price per Harvest is normally the same as the Sell Price of one normal-quality crop. Extra crops are not counted since their occurrence is rare, except in the case of potatoes. The chance of an extra potato is ≈25%, much higher than with any other crop. Thus, the Sell Price per Harvest is 1.25 × 80 instead of 1 × 80.
+    // In the case of plants that always give >1 item per harvest (e.g., Coffee Bean, Blueberry, Cranberries) the Sell Price per Harvest = # of crops per Harvest × Sell Price for one item.
     let current_season = ctx.selected_season; 
     let price = 0;
     let harvest_seasons = crop.season;
@@ -123,7 +129,7 @@ function updateChart(){
     });
 
     // Translate bars to their new position
-    let margin = {top: 30, right: 30, bottom: 70, left: 60}
+    let margin = {top: 30, right: 30, bottom: 100, left: 60}
     width = ctx.W - margin.left - margin.right,
     height = ctx.H - margin.top - margin.bottom;
 
@@ -135,9 +141,17 @@ function updateChart(){
     .domain(profit.map(function(d) { return d.crop; }))
     .padding(0.2);
 
+    let x_crops = d3.scaleBand()
+        .range([0, width])
+        .domain(profit.map(function(d) { return d.crop.replace(/_/g, " "); }))
+        .padding(0.2);
 
+    let [min, max] = d3.extent(profit, function(d) { return d.value; });
+    if (min == max){
+        min > 0 ? min = 0 : max = 0;
+    }
     let y = d3.scaleLinear()
-        .domain(d3.extent(profit, function(d) { return d.value; }))
+        .domain([min, max])
         .range([height, 0]);
 
     let trans = svg.transition().duration(1000);
@@ -145,7 +159,10 @@ function updateChart(){
     svg.select(".x-axis")
         .transition(trans)
         .attr("transform", "translate(0," + y(0) + ")")
-        .call(d3.axisBottom(x));
+        .call(d3.axisBottom(x_crops))
+        .selectAll("text")
+            .attr("transform", "translate(-15,10)rotate(-70)")
+            .style("text-anchor", "end")
 
     svg.select(".y-axis")
         .transition(trans)
@@ -163,6 +180,7 @@ function updateChart(){
         .attr("height", 0)
         .attr("width", x.bandwidth())
         .attr("fill", "#90EE90")
+        .call(enter => enter.append("title").text(d => d.value + "g"))
         .merge(posBars)
         .transition(trans)
         .attr("x", d => x(d.crop))
@@ -188,6 +206,7 @@ function updateChart(){
         .attr("height", 0)
         .attr("width", x.bandwidth())
         .attr("fill", "#FF7F7F")
+        .call(enter => enter.append("title").text(d => d.value + "g"))
         .merge(negBars)
         .transition(trans)
         .attr("x", d => x(d.crop))
@@ -223,7 +242,7 @@ function createChart(){
 
     // console.log(profit);
 
-    let margin = {top: 30, right: 30, bottom: 70, left: 60}
+    let margin = {top: 30, right: 30, bottom: 100, left: 60}
     width = ctx.W - margin.left - margin.right,
     height = ctx.H - margin.top - margin.bottom;
 
@@ -240,11 +259,21 @@ function createChart(){
         .domain(profit.map(function(d) { return d.crop; }))
         .padding(0.2);
 
+    let [min, max] = d3.extent(profit, function(d) { return d.value; });
+    if (min == max){
+            min > 0 ? min = 0 : max = 0;
+    }
     let y = d3.scaleLinear()
-        .domain(d3.extent(profit, function(d) { return d.value; }))
+        .domain([min, max])
         .range([height, 0]);
     
-    
+    let x_crops = d3.scaleBand()
+        .range([0, width])
+        .domain(profit.map(function(d) { return d.crop.replace(/_/g, " "); }))
+        .padding(0.2);
+
+
+    let transition = svg.transition().duration(1000).ease(d3.easePoly);
     // Positive values
     svg.append("g")
         .attr("class", "pos")
@@ -252,10 +281,14 @@ function createChart(){
         .data(profit.map(d => d.value > 0 ? d : {value: 0}))
         .join("rect")
             .attr("x", d => x(d.crop))
-            .attr("y", d => y(d.value))
-            .attr("height", d => y(0) - y(d.value))
+            .attr("y", d => y(0))
+            .attr("height", 0)
             .attr("width", x.bandwidth())
             .attr("fill", "#90EE90")
+            .transition(transition)
+                .attr("y", d => y(d.value))
+                .attr("height", d => y(0) - y(d.value))
+            .selection()
             .append("title")
                 .text(d => d.value + "g");
 
@@ -267,18 +300,21 @@ function createChart(){
         .join("rect")
             .attr("x", d => x(d.crop))
             .attr("y", y(0))
-            .attr("height", d => y(0) - y(-d.value))
+            .attr("height", 0)
             .attr("width", x.bandwidth())
             .attr("fill", "#FF7F7F")
+            .transition(transition)
+                .attr("height", d => y(0) - y(-d.value))
+            .selection()
             .append("title")
                 .text(d => d.value + "g");
 
     svg.append("g")
         .attr("transform", "translate(0," + y(0) + ")")
         .attr("class", "x-axis")
-        .call(d3.axisBottom(x))
+        .call(d3.axisBottom(x_crops))
         .selectAll("text")
-            .attr("transform", "translate(-13,10)rotate(-90)")
+            .attr("transform", "translate(-15,10)rotate(-70)")
             .style("text-anchor", "end")
 
     svg.append("g")
@@ -291,7 +327,6 @@ function createChart(){
  * @description Creates a ranking slop chart
  */
 function createRankingChart(){
-    // Dict: key is day, value is dict with crop and profit
     let profit = {};
     let season = ctx.selected_season; 
     let crops = ctx.crops;
@@ -314,8 +349,6 @@ function createRankingChart(){
         profit[day].sort((a, b) => b.value - a.value);
     })
 
-    let minProfit = d3.min(Object.keys(profit).map(d => d3.min(profit[d], p => p.value)));
-    let maxProfit = d3.max(Object.keys(profit).map(d => d3.max(profit[d], p => p.value)));
 
     let margin = {top: 30, right: 30, bottom: 70, left: 60}
     width = ctx.W - margin.left - margin.right,
@@ -368,6 +401,12 @@ function createRankingChart(){
         .attr("opacity", 1)
         .call(d3.axisLeft(display));
 
+
+    // Maximum of 17 crops
+    let colorLine = d3.scaleOrdinal()
+        .domain(crops.map(c => c.crop))
+        .range(["#393b79","#5254a3","#6b6ecf","#9c9ede","#637939","#8ca252","#b5cf6b","#cedb9c","#8c6d31","#bd9e39","#e7ba52","#e7cb94","#843c39","#ad494a","#d6616b","#e7969c","#7b4173","#a55194","#ce6dbd","#de9ed6"]);
+    
     let line = d3.line()
         .x(d => x(d.day))
         .y(d => y(crops[d.rank].crop));
@@ -379,7 +418,7 @@ function createRankingChart(){
         .append("path")
             .attr("class", "line")
             .attr("fill", "none")
-            .attr("stroke", "grey")
+            .attr("stroke", crop => colorLine(crop.crop))
             .attr("stroke-width", 1.5)
             .attr("d", crop => {
                 let lineData = days.map(day => {
@@ -405,6 +444,7 @@ function createRankingChart(){
             .attr("stroke-dashoffset", 0);
     });
 
+
     // Add circles and images for each crop
     crops.forEach(crop => {
         let lineData = days.map(day => {
@@ -425,7 +465,7 @@ function createRankingChart(){
             .attr("cx", d => x(d.day))
             .attr("cy", d => y(crops[d.rank].crop))
             .attr("r", 5)
-            .attr("fill", "white");
+            .attr("fill", "white")
 
         points.append("image")
             .attr("class", "crop-image-" + crop.crop)
@@ -440,7 +480,11 @@ function createRankingChart(){
                 .delay((d,i) => i * 100)
                 .ease(d3.easeLinear)
             .attr("y", d => y(crops[d.rank].crop) - 5)
-            .attr("opacity", 1);
+            .attr("opacity", 1)
+            .selection()
+            .append("title")
+                .text(d => crop.crop.replace(/_/g, " ") + ": " +d.value + "g");
+
     });
         
 }
