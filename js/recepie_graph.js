@@ -57,7 +57,14 @@ const tooltip = d3.select('body').append('div')
 .on('mouseover', function(event, d) {
     highlightNode(d);
     tooltip.style('display', 'inline-block')
-        .html(getTooltipContent(d));
+        .html(getTooltipContent(d))
+                // Get the node's position (handle transform position for scatter plot)
+        const nodePosition = d3.select(this).node().getBoundingClientRect();
+        const offsetX = 10;  // Tooltip offset from the cursor
+        const offsetY = 10;
+
+        tooltip.style('left', (nodePosition.left + offsetX) + 'px')
+            .style('top', (nodePosition.top + offsetY) + 'px');
 })
 .on('mousemove', function(event) {
     tooltip.style('left', (event.pageX + 10) + 'px')
@@ -178,7 +185,7 @@ function updateVisualization(filteredNodes, filteredLinks) {
     const nodesArray = Object.values(filteredNodes);
 
     // Update simulation nodes and links if simulation is defined
-    if (ctx.simulation) {
+    if (ctx.simulation && !ctx.isScatterPlot) {
         ctx.simulation.nodes(nodesArray);
         ctx.simulation.force('link').links(filteredLinks);
     }
@@ -355,26 +362,23 @@ function createScatterPlot() {
 }
 
 // New function to update positions in scatter plot mode
-function updateScatterPlotPositions(filteredNodes) {
+function updateScatterPlotPositions(filteredNodes, metric = 'health') {
+
+console.log(filteredNodes);
     ctx.node.transition().duration(1000)
         .attr('transform', d => {
             if (d.group === 'recepie' && filteredNodes[d.id]) {
                 const recepieInfo = ctx.recepieData.find(r => r.name === d.id);
                 d.savedX = d.x; // Save current x position
                 d.savedY = d.y; // Save current y position
+
                 d.fx = xScale(+recepieInfo.price);
-                d.fy = yScale(+recepieInfo.health);
+                d.fy = yScale(metric==='health' ? +recepieInfo.health : +recepieInfo.energy);
+
                 return `translate(${d.fx},${d.fy})`;
             } else {
-                // set opacity to 0
-                // d.fx = -100;
+
                 return `translate(${d.x},${d.y})`;
-
-
-                // set opacity to 0
-                // d.fx = -100;
-                // d.fy = -100;
-                // return `translate(${d.fx},${d.fy})`;
             }
         });
 }
@@ -482,7 +486,13 @@ function getTooltipContent(d) {
     if (d.group === 'ingredient') {
         return `<strong>${d.id}</strong><br>Type: ${d.type}<br>Price: ${d.price}`;
     } else if (d.group === 'recepie') {
-        return `<strong>${d.id}</strong><br>Price: ${d.price}`;
+        // also show health and energy, and small images of ingredients
+        const recepieInfo = ctx.recepieData.find(r => r.name === d.id);
+        const ingredients = ctx.links.filter(link => link.target.id === d.id)
+            .map(link => link.source.id);
+        const ingredientImages = ingredients.map(ingredient => `<img src="data/images/recepies_ingredients/${ingredient}.png" width="20" height="20" title="${ingredient}">`).join(' ');
+        return `<strong>${d.id}</strong><br>Price: ${d.price}<br>Health: ${recepieInfo.health}<br>Energy: ${recepieInfo.energy}<br>Ingredients: ${ingredientImages}`;
+              
     }
     return '';
 }
@@ -546,11 +556,12 @@ function dragended(event, d) {
 function highlightNode(d) {
     ctx.node.style('opacity', o => isConnected(d, o) ? 1 : 0.1);
     ctx.link.style('opacity', o => o.source === d || o.target === d ? 1 : 0.1);
+
 }
 
 function resetHighlight() {
     ctx.node.style('opacity', d => d.group === 'ingredient' ? ctx.ingredientOpacity : 1);
-    ctx.link.style('opacity', 0.6);
+    ctx.link.style('opacity', ctx.isScatterPlot ? 0 : 0.6);
 }
 
 // Check if two nodes are connected
@@ -561,8 +572,9 @@ function isConnected(a, b) {
 // Build linkedByIndex for quick lookup
 function buildLinkedByIndex() {
     ctx.links.forEach(d => {
-        ctx.linkedByIndex[`${d.source.id},${d.target.id}`] = true;
+        ctx.linkedByIndex[`${d.source},${d.target}`] = true;
     });
+
 }
 
 // Transition back to force-directed graph
@@ -636,10 +648,11 @@ d3.select('head').append('style').text(`
 `);
 
 function setScatterYAxis(metric) {
-    yScale.domain(d3.extent(ctx.recepieData, d => +d[metric]));
+    yScale.domain(d3.extent(ctx.recepieData, d => metric === 'health' ? +d.health : +d.energy));
     ctx.yAxisG.transition().call(d3.axisLeft(yScale));
     ctx.yLabel.text(metric.charAt(0).toUpperCase() + metric.slice(1));
-    updateScatterPlotPositions(ctx.nodes);
+    console.log(metric);
+    updateScatterPlotPositions(ctx.nodes, metric);
 }
 
 init();
