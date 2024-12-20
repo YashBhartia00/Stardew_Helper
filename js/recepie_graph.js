@@ -14,9 +14,9 @@ const ctx = {
     ingredientCategories: [],
     selectedCategories: new Set(),
     forceParams: {
-        linkDistance: 20,
-        linkStrength: 0.4,
-        chargeStrength: -20,
+        linkDistance: 30,
+        linkStrength: 0.6,
+        chargeStrength: -40,
         chargeDistanceMax: 300,
         collisionRadius: d => getNodeSize(d) / 2 + 5,
         centerStrength: 1,
@@ -360,6 +360,8 @@ function updateScatterPlotPositions(filteredNodes) {
         .attr('transform', d => {
             if (d.group === 'recepie' && filteredNodes[d.id]) {
                 const recepieInfo = ctx.recepieData.find(r => r.name === d.id);
+                d.savedX = d.x; // Save current x position
+                d.savedY = d.y; // Save current y position
                 d.fx = xScale(+recepieInfo.price);
                 d.fy = yScale(+recepieInfo.health);
                 return `translate(${d.fx},${d.fy})`;
@@ -568,26 +570,37 @@ function createForceDirectedGraph() {
     // Remove axes from ctx.g instead of ctx.svg
     ctx.g.selectAll('.x-axis, .y-axis, .x-label, .y-label').remove();
 
+    // Reset node positions to saved positions
     ctx.node.each(d => {
-        d.fx = null;
-        d.fy = null;
+        d.fx = d.savedX;
+        d.fy = d.savedY;
     });
 
-    // Show links
-    ctx.link.transition().duration(1000)
-        .style('opacity', 0.6);
+    // Transition nodes back to saved positions
+    ctx.node.transition()
+        .duration(1000)
+        .attr('transform', d => `translate(${d.fx},${d.fy})`)
+        .on('end', () => {
+            // Remove fixed positions
+            ctx.node.each(d => {
+                d.fx = null;
+                d.fy = null;
+            });
 
-    // Apply forces
-    applyForces();
+            // Apply forces
+            applyForces();
 
-    // Reset ingredient opacity when switching back
-    ctx.ingredientOpacity = 0.2;
-    ctx.node.style('opacity', d => d.group === 'ingredient' ? ctx.ingredientOpacity : 1);
+            // Reset ingredient opacity when switching back
+            ctx.ingredientOpacity = 0.2;
+            ctx.node.style('opacity', d => d.group === 'ingredient' ? ctx.ingredientOpacity : 1);
 
-    // Restart simulation
-    ctx.simulation.alpha(1).restart();
-    ctx.isScatterPlot = false;
-    updateVisualization(ctx.nodes, ctx.links);
+            // Restart simulation
+            ctx.simulation.alpha(1).restart();
+            ctx.isScatterPlot = false;
+            updateVisualization(ctx.nodes, ctx.links);
+        });
+        ctx.link.transition().duration(1000)
+            .style('opacity', 0.6);
 }
 
 // Add CSS styles for the filter buttons
