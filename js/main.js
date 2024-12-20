@@ -1051,7 +1051,7 @@ function computeHourlyProfit(hour, season, locations, weather){
         });
     })
 
-    // total = total / (locations.length);
+    total = total / (locations.length);
     return total; 
 }
 
