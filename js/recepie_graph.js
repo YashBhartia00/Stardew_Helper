@@ -364,7 +364,15 @@ function updateScatterPlotPositions(filteredNodes) {
                 d.fy = yScale(+recepieInfo.health);
                 return `translate(${d.fx},${d.fy})`;
             } else {
+                // set opacity to 0
+                // d.fx = -100;
                 return `translate(${d.x},${d.y})`;
+
+
+                // set opacity to 0
+                // d.fx = -100;
+                // d.fy = -100;
+                // return `translate(${d.fx},${d.fy})`;
             }
         });
 }
@@ -585,11 +593,32 @@ function createForceDirectedGraph() {
 // Add CSS styles for the filter buttons
 d3.select('head').append('style').text(`
     .category-filter-button {
-        margin: 2px;
-        padding: 5px 10px;
+        margin: 5px;
+        padding: 8px 12px;
+        background-color: #f2d8e4; /* Pastel color */
+        color: #333;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .category-filter-button:hover {
+        background-color: #e8c3d3;
     }
     .category-filter-button.active {
+        background-color: #a64d79; /* Darker shade when selected */
         color: white;
+    }
+    #filterContainer {
+        position: absolute;
+        right: 20px;
+        top: 100px;
+        display: flex;
+        flex-direction: column;
+    }
+    #filterButtons, #categoryFilterButtons {
+        display: flex;
+        flex-direction: column;
     }
 `);
 
