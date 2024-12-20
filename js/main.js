@@ -353,10 +353,7 @@ function loadData(){
     ctx.locations.forEach(location => {
         ctx.seasons.forEach(season => {
             ["Sun", "Rain"].forEach(weather => {
-                if(location == "The_Desert" || location == "Mountain_Lake" && (season == "Fall" || season == "Spring")) {} // No data for these locations yet
-                else {
-                    chanceFiles.push(`data/fish_chances/${location}_${season}_${weather}.csv`);
-                }
+                chanceFiles.push(`data/fish_chances/${location}_${season}_${weather}.csv`);
             });
         });
     });
@@ -990,7 +987,6 @@ function computeHourlyProfit(hour, season, locations=ctx.locations, weather=["Su
 
     locations.forEach(location => {
         weather.forEach(weather => {
-            if(location == "The_Desert" || location == "Mountain_Lake" && (season == "Fall" || season == "Spring")) return; // No data for these locations yet
             let chances = ctx.fish_chances[location + "_" + season + "_" + weather];
             chances = chances[hour];
             let profit = 0;
