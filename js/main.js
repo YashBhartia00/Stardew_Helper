@@ -1020,38 +1020,149 @@ function computeHourlyProfit(hour, season){
  */
 function fishAveragePricePerTime(){
     const times = d3.range(6, 26).map(hour => `${hour}00`);
-
     times[18] = "0";
     times[19] = "100";
+
+    times.reverse();
+
     console.log(times);
 
     const seasons = ctx.seasons;
     const data = [];
     seasons.forEach(season => {
-        const seasonData = [];
+        point = {}
         times.forEach(hour => {
             const gameHour = parseInt(hour);
-            const totalProfit = computeHourlyProfit(gameHour, season);
-            seasonData.push({
-                axis: `${hour}`,
-                value: totalProfit
-            });
+            point[hour] = computeHourlyProfit(gameHour, season);
         });
-        data.push(seasonData);
+        data.push(point);
     });
 
-    const config = {
-        w: 250,
-        h: 250,
-        margin: {top: 50, right: 50, bottom: 50, left: 50},
-		maxValue: 0.5,
-		levels: 5,
-		roundStrokes: true,
-		color: d3.scaleOrdinal().range(["#21908dff", "#fde725ff", "#fc4e2aff", "#ececec"])
-    };
+    maxValue = d3.max(data.map(season => d3.max(Object.values(season))));
+    
+    let width = 600;
+    let height = 600;
+    let svg = d3.select("#radarChart").append("svg")
+    .attr("width", width)
+    .attr("height", height);
 
-    RadarChart("#radarChart", data, config);
+    let radialScale = d3.scaleLinear()
+    .domain([0,maxValue])
+    .range([0,250]);
+    let ticks = [maxValue/4,maxValue/2,3*maxValue/4,maxValue];
+
+    // Create "axis" circles
+    svg.selectAll("circle")
+        .data(ticks)
+        .join(
+            enter => enter.append("circle")
+                .attr("cx", width/2)
+                .attr("cy", height/2)
+                .attr("fill", "none")
+                .attr("stroke", "grey")
+                .attr("r", d => radialScale(d))
+        )
+
+    function angleToCoordinate(angle, value){
+            let x = Math.cos(angle) * radialScale(value);
+            let y = Math.sin(angle) * radialScale(value);
+            return {"x": width / 2 + x, "y": height / 2 - y};
+    }
+    
+    svg.selectAll(".ticklabel")
+        .data(ticks)
+        .join(
+            enter => enter.append("text")
+            .attr("class", "ticklabel")
+            .attr("x", width/2 + 5)
+            .attr("y", d => height/2 - radialScale(d))
+            .attr("dy", "1em")
+            .text(d => parseInt(d).toString())
+                .attr("fill", "grey")
+                .attr("font-size", "10px")
+        )
+
+    // Plot axes
+    const features = times;
+    const featureData = features.map((d, i) => {
+        let angle = (Math.PI/2) + (2 * Math.PI * i / features.length);
+        return {
+            name: d,
+            angle: angle,
+            line_coord: angleToCoordinate(angle, maxValue),
+            label_coord: angleToCoordinate(angle, maxValue + 0.5)
+        }
+    })
+
+    // draw axes lines
+    svg.selectAll("line")
+        .data(featureData)
+        .join(
+            enter => enter.append("line")
+                .attr("x1", width/2)
+                .attr("y1", height/2)
+                .attr("x2", d => d.line_coord.x)
+                .attr("y2", d => d.line_coord.y)
+                .attr("stroke", "lightgrey")
+        )
+    
+    // draw axes labels
+    svg.selectAll(".axislabel")
+        .data(featureData)
+        .join(
+            enter => enter.append("text")
+                .attr("x", d => d.label_coord.x)
+                .attr("y", d => d.label_coord.y)
+                .attr("text-anchor", d => {
+                    if(d.angle > Math.PI / 2 && d.angle < 3 * Math.PI / 2){
+                        return "end";
+                    } else {
+                        return "start";
+                    }
+                })
+                .attr("dy", d => {
+                    if(d.angle > Math.PI && d.angle < 2 * Math.PI){
+                        return "1em";
+                    } else if(d.angle == 0 || d.angle == Math.PI){
+                        return "0.5em";
+                    } else {
+                        return "-0.5em";
+                    }
+                        
+                })
+                .text(d => d.name)
+                
+        )
+
+    let line = d3.line()
+        .x(d => d.x)
+        .y(d => d.y);
+
+    let colors = d3.scaleOrdinal().range(["#00FF00", "#FFD700", "#FF8C00", "#1E90FF"]);
+
+    function getPathCoordinates(data_point){
+        let coordinates = [];
+        for (var i = 0; i < features.length; i++){
+            let ft_name = features[i].toString();
+            let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
+            coordinates.push(angleToCoordinate(angle, data_point[ft_name]));
+        }
+        return coordinates;
+    }
+
+    svg.selectAll("path")
+        .data(data)
+        .join(
+            enter => enter.append("path")
+                .datum(d => getPathCoordinates(d))
+                .attr("d", line)
+                .attr("stroke-width", 2)
+                .attr("stroke", (d, i) => colors(i))
+                .attr("fill", (d, i) => colors(i))
+                .attr("fill-opacity", 0.2)
+        );
 }
+
 
 function handleWeatherSelection(){
     d3.selectAll(".weather-btn").on("click", function(){
