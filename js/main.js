@@ -350,33 +350,15 @@ function loadData(){
         "data/fish_detail.csv",
         "data/fish_price_breakdown.csv",
         "data/crabpotandothercatchables.csv",
-        "data/fish_chances/Beach_(Spring).csv",
-        "data/fish_chances/Beach_(Summer).csv",
-        "data/fish_chances/Beach_(Fall).csv",
-        "data/fish_chances/Beach_(Winter).csv",
-        "data/fish_chances/Forest_Lake_(Spring).csv",
-        "data/fish_chances/Forest_Lake_(Summer).csv",
-        "data/fish_chances/Forest_Lake_(Fall).csv",
-        "data/fish_chances/Forest_Lake_(Winter).csv",
-        "data/fish_chances/Forest_River_(Spring).csv",
-        "data/fish_chances/Forest_River_(Summer).csv",
-        "data/fish_chances/Forest_River_(Fall).csv",
-        "data/fish_chances/Forest_River_(Winter).csv",
-        "data/fish_chances/Mountain_(Spring).csv",
-        "data/fish_chances/Mountain_(Summer).csv",
-        "data/fish_chances/Mountain_(Fall).csv",
-        "data/fish_chances/Mountain_(Winter).csv",
-        "data/fish_chances/Town_(Spring).csv",
-        "data/fish_chances/Town_(Summer).csv",
-        "data/fish_chances/Town_(Fall).csv",
-        "data/fish_chances/Town_(Winter).csv",
-        
+        "data/fish_chances/beach_winter_rain.csv"
     ]
 
     let promises = files.map(url => d3.csv(url))
     Promise.all(promises).then(function(data){
+        console.log(data[3]);
         processFishData(data[0]);
         addFishToList();
+        processChancesData("beach", "winter", "rain");
         ctx.fish_price_breakdown = data[1];
         ctx.fish_detail = data[0];
 
@@ -388,6 +370,25 @@ function loadData(){
         fishAveragePricePerTime();
         // createXPDifficultyScatter(ctx.FISH_DATA);
     })
+}
+
+function processChancesData(location, season, weather){
+    // variable to take into account: hours of the day, season, weather, location.
+    // Fish chances of being caught depends on those
+    d3.csv("data/fish_chances/" + location + "_" + season + "_" + weather + ".csv").then(function(data){
+        let chances = {}
+        data.forEach(row => {
+            let time = row.Time;
+            chances[time] = {};
+
+            for(let i = 2 ; i < data.columns.length; i++){
+                let fish = data.columns[i];
+                chances[time][fish.replace(/\d+/g, "").trim()] = parseFloat(row[fish]);
+            }
+        });
+        console.log(chances);
+        return chances;
+    });
 }
 
 /**
@@ -946,21 +947,17 @@ function timeWheel(){
 }
 
 /**
- * Computes the hourly possible profit for a given hour and season
+ * Computes the hourly possible profit for a given hour, season, weather
  * @param {*} hour  the hour to compute the profit for
  * @param {*} season the season to compute the profit for
+ * @param {*} weather the weather to compute the profit for
  * @returns the hourly profit
  */
-function computeHourlyProfit(hour, season){
+function computeHourlyProfit(hour, season, weather){
     let total = 0;
-    const fishPerHour = 2;
-    const files = {
-        "Beach": "data/fish_chances/Beach_{season}.csv",
-        "Forest lake": "data/fish_chances/Forest_Lake_{season}.csv",
-        "Forest river": "data/fish_chances/Forest_River_{season}.csv",
-        "Mountain": "data/fish_chances/Mountain_{season}.csv",
-        "Town": "data/fish_chances/Town_{season}.csv",
-    }
+    const fishPerHour = 2; // A player can fish about 2 fishes per game hour
+
+
 
     // Object.values(files).forEach(file => {
     //     const chances = ctx.fish_chances[file];
@@ -977,7 +974,7 @@ function computeHourlyProfit(hour, season){
  * Creates a radar chart to display the hourly profit for each season
  */
 function fishAveragePricePerTime(){
-    const times = d3.range(6, 27).map(hour => `${hour}`);
+    const times = d3.range(6, 26).map(hour => `${hour}`);
     const seasons = ["Spring", "Summer", "Fall", "Winter"];
     const data = [];
     seasons.forEach(season => {
