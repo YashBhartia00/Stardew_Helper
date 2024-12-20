@@ -987,24 +987,38 @@ function computeHourlyProfit(hour, season, locations=ctx.locations, weather=["Su
     // total multipled by fishesPerHour
     let total = 0;
     const fishPerHour = 2; // A player can fish about 2 fishes per game hour
+
     locations.forEach(location => {
         weather.forEach(weather => {
             if(location == "The_Desert" || location == "Mountain_Lake" && (season == "Fall" || season == "Spring")) return; // No data for these locations yet
             let chances = ctx.fish_chances[location + "_" + season + "_" + weather];
             chances = chances[hour];
             let profit = 0;
-    
+
             // chances column is weather, season, fish1, fish2, fish3, ...
+            let fishCount = 0;
             Object.keys(chances).forEach(row => {
                 if(row == "weather" || row == "season") return;
                 let fish = row;
                 let chance = chances[row];
                 let fishData = ctx.FISH_DATA.find(f => f.name == fish);
-                if(!fishData) return;
-                let price = fishData.basePrice;
-                profit += price * chance;
+                if(!fishData){
+                    if (fish == "Green Algae"){
+                        let price = 15;
+                        profit += price * chance;
+                        fishCount++;
+                    } else {
+                        return;
+                    }
+                } else {
+                    let price = fishData.basePrice;
+                    profit += price * chance;
+                    fishCount++;
+                }
             })
-            total += profit;
+            console.log("fishCount, profit", fishCount, profit);
+            if(profit > 0)
+                total += profit / fishCount * fishPerHour;
         });
     })
 
@@ -1016,7 +1030,6 @@ function computeHourlyProfit(hour, season, locations=ctx.locations, weather=["Su
  */
 function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, weather=["Sun", "Rain"]){
     const times = ["600", "100", "0", "2300", "2200", "2100", "1900", "1800", "1700", "1600", "1500", "1400", "1300", "1200", "1100", "1000", "900", "800", "700"];
-    console.log(times);
 
     const data = [];
     seasons.forEach(season => {
@@ -1027,7 +1040,7 @@ function fishAveragePricePerTime(seasons=ctx.seasons, locations=ctx.locations, w
         });
         data.push(point);
     });
-    console.log(data);
+
 
     maxValue = d3.max(data.map(season => d3.max(Object.values(season))));
     let width = 600;
