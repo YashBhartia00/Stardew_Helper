@@ -7,7 +7,9 @@ const ctx = {
     fish_chances: {},
     SELECTED_TIME: [],
     SELECTED_SEASON: [],
-    SELECTED_AREAS: []
+    SELECTED_AREAS: [],
+    seasons: ["Spring", "Summer", "Fall", "Winter"],
+    locations: ["Ocean", "Mountain_Lake", "River_Town", "River_Forest", "Forest_Pond", "The_Desert", "Secret_Woods_Pond"],
 }
 
 // TODO: when reset filter, change color of time wheel back to default
@@ -346,49 +348,80 @@ function createViz(){
  * Loads the data from the csv files
  */
 function loadData(){
+    let chanceFiles = [];
+    ctx.locations.forEach(location => {
+        ctx.seasons.forEach(season => {
+            ["Sun", "Rain"].forEach(weather => {
+                if(location == "The_Desert" || location == "Mountain_Lake" && (season == "Fall" || season == "Spring")) {} // No data for these locations yet
+                else {
+                    chanceFiles.push(`data/fish_chances/${location}_${season}_${weather}.csv`);
+                }
+            });
+        });
+    });
+
+    // let chanceFiles = ["data/fish_chances/ocean_winter_rain.csv" ,"data/fish_chances/ocean_winter_sun.csv"]
+
     const files = [
         "data/fish_detail.csv",
         "data/fish_price_breakdown.csv",
         "data/crabpotandothercatchables.csv",
-        "data/fish_chances/beach_winter_rain.csv"
     ]
+
+    files.push(...chanceFiles);
 
     let promises = files.map(url => d3.csv(url))
     Promise.all(promises).then(function(data){
-        console.log(data[3]);
+        ctx.fish_price_breakdown = data[1];
         processFishData(data[0]);
         addFishToList();
-        processChancesData("beach", "winter", "rain");
-        ctx.fish_price_breakdown = data[1];
+        ctx.fish_chances = {};
+        chanceFiles.forEach((file, index) => {
+            // Sometimes location is 2 words separated by _ (ie River_Town), or even 3 words 
+            let location = file.split("/")[2].split("_")[0]; 
+            let second = file.split("/")[2].split("_")[1];
+            let third = file.split("/")[2].split("_")[2];
+
+            let season = "";
+            let weather = "";
+            if(ctx.seasons.includes(second)){
+                season = second;
+                weather = third.split(".")[0];
+            } else if (ctx.seasons.includes(third)){ // location is 2 words
+                location += "_" + second;
+                season = third;
+                weather = file.split("/")[2].split("_")[3].split(".")[0];
+            } else { // location is 3 words
+                location += "_" + second + "_" + third;
+                season = file.split("/")[2].split("_")[3];
+                weather = file.split("/")[2].split("_")[4].split(".")[0];
+            }
+            // console.log(index+3, files.length, chanceFiles[index], location, season, weather);
+            processChancesData(location, season, weather, data[index + 3]);
+        })
         ctx.fish_detail = data[0];
 
-        // Fish changes
-        ctx.fish_chances = {};
-        for(let i = 3 ; i < files.length; i++){
-            ctx.fish_chances[files[i]] = data[i];
-        }
+        console.log("chances",ctx.fish_chances);
         fishAveragePricePerTime();
-        // createXPDifficultyScatter(ctx.FISH_DATA);
     })
 }
 
-function processChancesData(location, season, weather){
+function processChancesData(location, season, weather, data){
     // variable to take into account: hours of the day, season, weather, location.
     // Fish chances of being caught depends on those
-    d3.csv("data/fish_chances/" + location + "_" + season + "_" + weather + ".csv").then(function(data){
-        let chances = {}
-        data.forEach(row => {
-            let time = row.Time;
-            chances[time] = {};
-
-            for(let i = 2 ; i < data.columns.length; i++){
-                let fish = data.columns[i];
-                chances[time][fish.replace(/\d+/g, "").trim()] = parseFloat(row[fish]);
-            }
-        });
-        console.log(chances);
-        return chances;
+    let chances = {}
+    if(!data) return;
+    data.forEach(row => {
+        let time = row.Time;
+        chances[time] = {};
+        chances[time]["weather"] = weather;
+        chances[time]["season"] = season;
+        for(let i = 2 ; i < data.columns.length; i++){
+            let fish = data.columns[i];
+            chances[time][fish.replace(/\d+/g, "").trim()] = parseFloat(row[fish]);
+        }
     });
+    ctx.fish_chances[location + "_" + season + "_" + weather] = chances;
 }
 
 /**
@@ -399,7 +432,7 @@ function processFishData(data){
     let fishData = data.map(fish => {
         let season = fish.Season.split('\n').map(s => s.trim());
         if (season == "All Seasons"){
-            season = ["Spring", "Summer", "Fall", "Winter"];
+            season = ctx.seasons;
         }
 
         let time = fish.Time.split('\n').map(t => t.trim());
@@ -456,12 +489,14 @@ function processFishData(data){
             location: location,
             description: fish.Description,
             baseXP: parseInt(fish.BaseXP),
-            difficulty: parseInt(fish.Difficulty.split(' ')[0])
+            difficulty: parseInt(fish.Difficulty.split(' ')[0]),
+            basePrice: parseInt(ctx.fish_price_breakdown.find(row => row.Name === "BP Base")[fish.Name]),
         }
     });
 
 
     ctx.FISH_DATA = fishData;
+    console.log(ctx.FISH_DATA);
 }
 
 /**
@@ -535,7 +570,7 @@ function isInRange(hour, range){
 function isFishMatch(fish){
     const matchesArea = ctx.SELECTED_AREAS ? ctx.SELECTED_AREAS.every(area => fish.location.includes(area)) : true;
     const matchesSeason = ctx.SELECTED_SEASON.every((selected, index) => {
-        return selected ? fish.seasons.includes(["Spring", "Summer", "Fall", "Winter"][index]) : true;
+        return selected ? fish.seasons.includes(ctx.seasons[index]) : true;
     });
     const matchesWeather = fish.weather.includes(ctx.SELECTED_WEATHER) || fish.weather.includes("Any")  || ctx.SELECTED_WEATHER == "Any";
     const matchesTime = ctx.SELECTED_TIME.every((selected, index) => {
@@ -549,19 +584,12 @@ function isFishMatch(fish){
  */
 function filterFish(searchTerm=""){
     const container = d3.select("#fishList");
-
     const filteredData = ctx.FISH_DATA.filter(isFishMatch);
-
     const finalFilteredData = searchTerm ? filteredData.filter(fish => fish.name.toLowerCase().includes(searchTerm.toLowerCase())) : filteredData;
-
-
     const filteredFishNames = finalFilteredData.map(fish => fish.name);
 
     container.selectAll("li")
         .style("display", d => filteredFishNames.includes(d.name) ? null : "none");
-
-    // createXPDifficultyScatter(finalFilteredData);
-
 
 }
 
@@ -766,7 +794,7 @@ function priceBarChart(selector, fishName){
  * Creates a pie chart to create a season wheel for selection
  */
 function seasonWheel(){
-    const seasons = ["Spring", "Summer", "Fall", "Winter"];
+    const seasons = ctx.seasons;
     const size = 200;
     const radius = size / 2;
 
@@ -823,7 +851,7 @@ function seasonWheel(){
  * Creates a time wheel for selection with seasons and times
  */
 function timeWheel(){
-    const seasons = ["Spring", "Summer", "Fall", "Winter"];
+    const seasons = ctx.seasons;
     const times = d3.range(6, 26).map(hour => `${hour % 24}:00`);
 
     const size = 300;
@@ -947,18 +975,35 @@ function timeWheel(){
 }
 
 /**
- * Computes the hourly possible profit for a given hour, season, weather
+ * Computes the hourly possible profit for a given hour, season
  * @param {*} hour  the hour to compute the profit for
  * @param {*} season the season to compute the profit for
- * @param {*} weather the weather to compute the profit for
  * @returns the hourly profit
  */
-function computeHourlyProfit(hour, season, weather){
+function computeHourlyProfit(hour, season){
     let total = 0;
     const fishPerHour = 2; // A player can fish about 2 fishes per game hour
-
-
-
+    ctx.locations.forEach(location => {
+        ["Sun", "Rain"].forEach(weather => {
+            if(location == "The_Desert" || location == "Mountain_Lake" && (season == "Fall" || season == "Spring")) return; // No data for these locations yet
+            let chances = ctx.fish_chances[location + "_" + season + "_" + weather];
+            chances = chances[hour];
+            let profit = 0;
+    
+            // chances column is weather, season, fish1, fish2, fish3, ...
+            Object.keys(chances).forEach(row => {
+                if(row == "weather" || row == "season") return;
+                let fish = row;
+                let chance = chances[row];
+                let fishData = ctx.FISH_DATA.find(f => f.name == fish);
+                if(!fishData) return;
+                let price = fishData.basePrice;
+                profit += price * chance;
+            })
+            total += profit;
+        });
+    })
+    // console.log("data rain", data_rain, season);
     // Object.values(files).forEach(file => {
     //     const chances = ctx.fish_chances[file];
     //     if(!chances) return;
@@ -967,15 +1012,20 @@ function computeHourlyProfit(hour, season, weather){
 
     //     })
     // })
-    return 10; // Placeholder
+    return total; // Placeholder
 }
 
 /**
  * Creates a radar chart to display the hourly profit for each season
  */
 function fishAveragePricePerTime(){
-    const times = d3.range(6, 26).map(hour => `${hour}`);
-    const seasons = ["Spring", "Summer", "Fall", "Winter"];
+    const times = d3.range(6, 26).map(hour => `${hour}00`);
+
+    times[18] = "0";
+    times[19] = "100";
+    console.log(times);
+
+    const seasons = ctx.seasons;
     const data = [];
     seasons.forEach(season => {
         const seasonData = [];
@@ -983,7 +1033,7 @@ function fishAveragePricePerTime(){
             const gameHour = parseInt(hour);
             const totalProfit = computeHourlyProfit(gameHour, season);
             seasonData.push({
-                axis: `${hour}:00`,
+                axis: `${hour}`,
                 value: totalProfit
             });
         });
